@@ -4,7 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { typeOrmConfig } from './config/database.config';
-import { ResearchModule } from './research/polymarket-activity.module';
+import { ActivityModule } from './activity/activity.module';
 import { NotificationModule } from './notification/notification.module';
 
 @Module({
@@ -13,8 +13,8 @@ import { NotificationModule } from './notification/notification.module';
       isGlobal: true,
     }),
     TypeOrmModule.forRootAsync(typeOrmConfig),
-    ResearchModule, 
-    NotificationModule
+    ActivityModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],
