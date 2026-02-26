@@ -1,21 +1,9 @@
 // ActivityService Unit Tests - Design Doc: 20260226-activity-module-production.md
 // Generated: 2026-02-26 | Budget Used: 6/6 unit scenarios per FR-11
 
-import { Test, TestingModule } from '@nestjs/testing';
+import { TestBed, Mocked } from '@suites/unit';
 import { ActivityService } from './activity.service';
-import { ActivityModule } from './activity.module';
 import { PolymarketApiService } from '../polymarket-api/polymarket-api.service';
-
-// ---------------------------------------------------------------------------
-// Shared mock factory — returns a fresh jest.fn() for each test module so
-// tests cannot accidentally share state through the mock reference.
-// ---------------------------------------------------------------------------
-
-function buildApiMock(rawActivities: object[]) {
-  return {
-    getActivities: jest.fn().mockResolvedValue(rawActivities),
-  };
-}
 
 // ---------------------------------------------------------------------------
 // FR-11 Scenario 1 — Single-record group output shape
@@ -25,7 +13,7 @@ function buildApiMock(rawActivities: object[]) {
 // Behavior: mock returns one RawActivity → formatGroup (single-record path) →
 //           one PolymarketActivity with all 11 fields at exact values
 // @category: core-functionality
-// @dependency: ActivityService, ActivityModule, PolymarketApiService (mock)
+// @dependency: ActivityService, PolymarketApiService (mock)
 // @complexity: medium
 // ROI: 95 | Business Value: 10 (full output contract) | Frequency: 10 (every call)
 // ---------------------------------------------------------------------------
@@ -48,14 +36,9 @@ describe('ActivityService – Scenario 1: single-record group output shape', () 
   ];
 
   beforeAll(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      imports: [ActivityModule],
-    })
-      .overrideProvider(PolymarketApiService)
-      .useValue(buildApiMock(RAW))
-      .compile();
-
-    service = module.get(ActivityService);
+    const { unit, unitRef } = await TestBed.solitary(ActivityService).compile();
+    service = unit;
+    unitRef.get(PolymarketApiService).getActivities.mockResolvedValue(RAW);
   });
 
   // AC: FR-5/FR-6 — "When fetchActivities is called and the raw response contains a
@@ -111,7 +94,7 @@ describe('ActivityService – Scenario 1: single-record group output shape', () 
 //           formatGroup (multi-record path) → one PolymarketActivity with correct sums
 //           and alphabetically sorted unique outcomePurchased
 // @category: core-functionality
-// @dependency: ActivityService, ActivityModule, PolymarketApiService (mock)
+// @dependency: ActivityService, PolymarketApiService (mock)
 // @complexity: medium
 // ROI: 90 | Business Value: 9 (aggregation contract) | Frequency: 8 (multi-token trades)
 // ---------------------------------------------------------------------------
@@ -146,14 +129,9 @@ describe('ActivityService – Scenario 2: multi-record group aggregation math', 
   ];
 
   beforeAll(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      imports: [ActivityModule],
-    })
-      .overrideProvider(PolymarketApiService)
-      .useValue(buildApiMock(RAW))
-      .compile();
-
-    service = module.get(ActivityService);
+    const { unit, unitRef } = await TestBed.solitary(ActivityService).compile();
+    service = unit;
+    unitRef.get(PolymarketApiService).getActivities.mockResolvedValue(RAW);
   });
 
   // AC: FR-5/FR-6 multi-record — "totalPriceUsd equals the sum of all usdcSize values
@@ -195,7 +173,7 @@ describe('ActivityService – Scenario 2: multi-record group aggregation math', 
 // Behavior: two RawActivity records with different transactionHash but identical
 //           (timestamp, slug, outcome, side) → pass 2 merges them → one output record
 // @category: core-functionality
-// @dependency: ActivityService, ActivityModule, PolymarketApiService (mock)
+// @dependency: ActivityService, PolymarketApiService (mock)
 // @complexity: high
 // ROI: 92 | Business Value: 10 (deduplication contract) | Frequency: 7 (cross-tx trades)
 // ---------------------------------------------------------------------------
@@ -230,14 +208,9 @@ describe('ActivityService – Scenario 3: cross-transaction merge on matching co
   ];
 
   beforeAll(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      imports: [ActivityModule],
-    })
-      .overrideProvider(PolymarketApiService)
-      .useValue(buildApiMock(RAW))
-      .compile();
-
-    service = module.get(ActivityService);
+    const { unit, unitRef } = await TestBed.solitary(ActivityService).compile();
+    service = unit;
+    unitRef.get(PolymarketApiService).getActivities.mockResolvedValue(RAW);
   });
 
   // AC: FR-7 — "When two intermediate records share the same numeric timestamp,
@@ -280,7 +253,7 @@ describe('ActivityService – Scenario 3: cross-transaction merge on matching co
 // Behavior: same (timestamp, outcome, side) but different slug → pass 2 does NOT merge
 //           → two separate output records
 // @category: core-functionality
-// @dependency: ActivityService, ActivityModule, PolymarketApiService (mock)
+// @dependency: ActivityService, PolymarketApiService (mock)
 // @complexity: medium
 // ROI: 80 | Business Value: 9 (deduplication boundary) | Frequency: 7 (cross-tx trades)
 // ---------------------------------------------------------------------------
@@ -315,14 +288,9 @@ describe('ActivityService – Scenario 4: no merge when any composite key field 
   ];
 
   beforeAll(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      imports: [ActivityModule],
-    })
-      .overrideProvider(PolymarketApiService)
-      .useValue(buildApiMock(RAW))
-      .compile();
-
-    service = module.get(ActivityService);
+    const { unit, unitRef } = await TestBed.solitary(ActivityService).compile();
+    service = unit;
+    unitRef.get(PolymarketApiService).getActivities.mockResolvedValue(RAW);
   });
 
   // AC: FR-7 — "When two intermediate records differ in any one of timestamp, marketSlug,
@@ -351,7 +319,7 @@ describe('ActivityService – Scenario 4: no merge when any composite key field 
 // Behavior: three records with timestamps 1000, 3000, 2000 (different hashes and slugs
 //           to prevent pass-2 merging) → output sorted [3000, 2000, 1000]
 // @category: core-functionality
-// @dependency: ActivityService, ActivityModule, PolymarketApiService (mock)
+// @dependency: ActivityService, PolymarketApiService (mock)
 // @complexity: medium
 // ROI: 85 | Business Value: 8 (sort contract for consumers) | Frequency: 10 (every call)
 // ---------------------------------------------------------------------------
@@ -400,14 +368,9 @@ describe('ActivityService – Scenario 5: descending timestamp sort order', () =
   ];
 
   beforeAll(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      imports: [ActivityModule],
-    })
-      .overrideProvider(PolymarketApiService)
-      .useValue(buildApiMock(RAW))
-      .compile();
-
-    service = module.get(ActivityService);
+    const { unit, unitRef } = await TestBed.solitary(ActivityService).compile();
+    service = unit;
+    unitRef.get(PolymarketApiService).getActivities.mockResolvedValue(RAW);
   });
 
   // AC: FR-8 — "The output of fetchActivities shall be sorted by numeric timestamp
@@ -445,7 +408,7 @@ describe('ActivityService – Scenario 5: descending timestamp sort order', () =
 //           sort treats missing as 0 → timestamped record first, no-timestamp record last
 //           with date === 'N/A'
 // @category: core-functionality
-// @dependency: ActivityService, ActivityModule, PolymarketApiService (mock)
+// @dependency: ActivityService, PolymarketApiService (mock)
 // @complexity: low
 // ROI: 72 | Business Value: 7 (sort edge case) | Frequency: 3 (occasional missing data)
 // ---------------------------------------------------------------------------
@@ -480,14 +443,9 @@ describe('ActivityService – Scenario 6: missing timestamp treated as 0 for sor
   ];
 
   beforeAll(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      imports: [ActivityModule],
-    })
-      .overrideProvider(PolymarketApiService)
-      .useValue(buildApiMock(RAW))
-      .compile();
-
-    service = module.get(ActivityService);
+    const { unit, unitRef } = await TestBed.solitary(ActivityService).compile();
+    service = unit;
+    unitRef.get(PolymarketApiService).getActivities.mockResolvedValue(RAW);
   });
 
   // AC: FR-8 — "When a record has no timestamp in the raw API response, the system shall

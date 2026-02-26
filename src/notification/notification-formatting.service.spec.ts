@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { TestBed } from '@suites/unit';
 import { NotificationFormattingService } from './notification-formatting.service';
 import { PolymarketActivity } from '../activity/activity.types';
 
@@ -17,10 +17,10 @@ const FULL_ACTIVITY: PolymarketActivity = {
 };
 
 async function buildService(): Promise<NotificationFormattingService> {
-  const module: TestingModule = await Test.createTestingModule({
-    providers: [NotificationFormattingService],
-  }).compile();
-  return module.get(NotificationFormattingService);
+  const { unit } = await TestBed.solitary(
+    NotificationFormattingService,
+  ).compile();
+  return unit;
 }
 
 // ---------------------------------------------------------------------------

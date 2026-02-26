@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { TestBed } from '@suites/unit';
 import { TelegramService } from './telegram.service';
 import axios from 'axios';
 
@@ -6,10 +6,8 @@ jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 async function buildService(): Promise<TelegramService> {
-  const module: TestingModule = await Test.createTestingModule({
-    providers: [TelegramService],
-  }).compile();
-  return module.get(TelegramService);
+  const { unit } = await TestBed.solitary(TelegramService).compile();
+  return unit;
 }
 
 // ---------------------------------------------------------------------------
@@ -40,8 +38,7 @@ describe('TelegramService – Scenario 1: sends message to all configured chat I
   it('calls axios.post once per chat ID with the correct URL', async () => {
     await service.sendMessage('hello');
     expect(mockedAxios.post).toHaveBeenCalledTimes(3);
-    const expectedUrl =
-      'https://api.telegram.org/bottest-token/sendMessage';
+    const expectedUrl = 'https://api.telegram.org/bottest-token/sendMessage';
     expect(mockedAxios.post).toHaveBeenCalledWith(expectedUrl, {
       chat_id: '111',
       text: 'hello',
