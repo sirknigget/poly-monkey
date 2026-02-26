@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotificationFormattingService } from './notification-formatting.service';
-import { PolymarketActivity } from '../activity/activity.service';
+import { PolymarketActivity } from '../activity/activity.types';
 
 const FULL_ACTIVITY: PolymarketActivity = {
   transactionHash: '0xAAA',

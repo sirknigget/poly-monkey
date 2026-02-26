@@ -1,20 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PolymarketApiService } from '../polymarket-api/polymarket-api.service';
 import { RawActivity } from '../polymarket-api/polymarket-api.types';
-
-export interface PolymarketActivity {
-  transactionHash: string;
-  date: string;
-  eventTitle: string;
-  eventLink: string;
-  marketSlug: string;
-  outcomePurchased: string;
-  side: string;
-  totalPriceUsd: number;
-  numTokens: number;
-  avgPricePerToken: number;
-  activityCount: number;
-}
+import { PolymarketActivity } from './activity.types';
 
 type PartialActivity = Omit<PolymarketActivity, 'date'>;
 
@@ -36,27 +23,19 @@ export class ActivityService {
       limit,
     );
 
-    // Pass 1: group raw records by transactionHash, produce intermediates without date
-    const groups = new Map<string, RawActivity[]>();
-    for (const record of rawActivities) {
-      const key = record.transactionHash ?? `unknown_${record.timestamp ?? 0}`;
-      const existing = groups.get(key);
-      if (existing) {
-        existing.push(record);
-      } else {
-        groups.set(key, [record]);
-      }
-    }
+    const groups = this.groupByTransactionHash(rawActivities);
+    const intermediates = this.buildIntermediates(groups);
+    const merged = this.mergeIntermediates(intermediates);
 
-    const intermediates: Intermediate[] = [];
-    for (const [key, records] of groups) {
-      intermediates.push({
-        partial: this.formatGroup(records, key),
-        timestamp: records[0].timestamp ?? 0,
-      });
-    }
+    merged.sort((a, b) => b.timestamp - a.timestamp);
 
-    // Pass 2: group intermediates by composite key (timestamp, marketSlug, outcomePurchased, side)
+    return merged.map(({ partial, timestamp }) => ({
+      ...partial,
+      date: timestamp ? new Date(timestamp * 1000).toLocaleString() : 'N/A',
+    }));
+  }
+
+  private mergeIntermediates(intermediates: Intermediate[]): Intermediate[] {
     const mergeMap = new Map<
       string,
       { partials: PartialActivity[]; timestamp: number }
@@ -76,7 +55,6 @@ export class ActivityService {
       }
     }
 
-    // Merge each pass-2 group and collect with timestamp for sorting
     const merged: Intermediate[] = [];
     for (const { partials, timestamp } of mergeMap.values()) {
       if (partials.length === 1) {
@@ -115,15 +93,36 @@ export class ActivityService {
         });
       }
     }
+    return merged;
+  }
 
-    // Sort descending by timestamp (missing = 0 → appears last)
-    merged.sort((a, b) => b.timestamp - a.timestamp);
+  private groupByTransactionHash(
+    rawActivities: RawActivity[],
+  ): Map<string, RawActivity[]> {
+    const groups = new Map<string, RawActivity[]>();
+    for (const record of rawActivities) {
+      const key = record.transactionHash ?? `unknown_${record.timestamp ?? 0}`;
+      const existing = groups.get(key);
+      if (existing) {
+        existing.push(record);
+      } else {
+        groups.set(key, [record]);
+      }
+    }
+    return groups;
+  }
 
-    // Format date only now, after sort
-    return merged.map(({ partial, timestamp }) => ({
-      ...partial,
-      date: timestamp ? new Date(timestamp * 1000).toLocaleString() : 'N/A',
-    }));
+  private buildIntermediates(
+    groups: Map<string, RawActivity[]>,
+  ): Intermediate[] {
+    const intermediates: Intermediate[] = [];
+    for (const [key, records] of groups) {
+      intermediates.push({
+        partial: this.formatGroup(records, key),
+        timestamp: records[0].timestamp ?? 0,
+      });
+    }
+    return intermediates;
   }
 
   private formatGroup(records: RawActivity[], key: string): PartialActivity {

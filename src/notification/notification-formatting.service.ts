@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PolymarketActivity } from '../activity/activity.service';
+import { PolymarketActivity } from '../activity/activity.types';
 
 @Injectable()
 export class NotificationFormattingService {
