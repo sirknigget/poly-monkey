@@ -4,24 +4,22 @@
 // Implementation Timing: After all feature implementations complete
 
 import { Test, TestingModule } from '@nestjs/testing';
-import { PolymarketActivityService } from '../src/research/polymarket-activity.service';
-import { ResearchModule } from '../src/research/polymarket-activity.module';
+import { ActivityService } from '../src/activity/activity.service';
+import { ActivityModule } from '../src/activity/activity.module';
 
 const TEST_ADDRESS = '0x2005d16a84ceefa912d4e380cd32e7ff827875ea';
 
 describe('PolymarketActivityService (integration)', () => {
   let module: TestingModule;
-  let service: PolymarketActivityService;
-  let activities: Awaited<
-    ReturnType<PolymarketActivityService['fetchActivities']>
-  >;
+  let service: ActivityService;
+  let activities: Awaited<ReturnType<ActivityService['fetchActivities']>>;
 
   beforeAll(async () => {
     module = await Test.createTestingModule({
-      imports: [ResearchModule],
+      imports: [ActivityModule],
     }).compile();
 
-    service = module.get(PolymarketActivityService);
+    service = module.get(ActivityService);
 
     // Single live API call shared across all assertions — avoids redundant network requests.
     // The address is known-active; a non-empty result is expected.

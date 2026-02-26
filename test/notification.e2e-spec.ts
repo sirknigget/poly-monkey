@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotificationModule } from '../src/notification/notification.module';
 import { TelegramService } from '../src/notification/telegram.service';
 import { NotificationFormattingService } from '../src/notification/notification-formatting.service';
-import { PolymarketActivity } from '../src/research/polymarket-activity.service';
+import { PolymarketActivity } from '../src/activity/activity.service';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -76,6 +76,8 @@ describe('Notification Integration (e2e)', () => {
 
     // This should not throw if the API request succeeds.
     // If it throws, the test will fail, indicating a problem with the integration or credentials.
-    await expect(telegramService.sendMessage(formattedMessage)).resolves.not.toThrow();
+    await expect(
+      telegramService.sendMessage(formattedMessage),
+    ).resolves.not.toThrow();
   });
 });
