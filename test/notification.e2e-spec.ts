@@ -2,9 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotificationModule } from '../src/notification/notification.module';
 import { TelegramService } from '../src/notification/telegram.service';
 import { NotificationFormattingService } from '../src/notification/notification-formatting.service';
-import { PolymarketActivity } from '../src/activity/activity.service';
 import * as fs from 'fs';
 import * as path from 'path';
+import {PolymarketActivity} from "../src/activity/activity.types";
 
 // Helper to manually load .env file for the E2E test if process.env is missing the vars.
 // This is useful running tests directly where a global dotenv setup isn't configured.
