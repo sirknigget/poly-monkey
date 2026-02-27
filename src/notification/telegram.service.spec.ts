@@ -19,16 +19,20 @@ afterEach(() => {
   jest.clearAllMocks();
 });
 
+function mockConfig(token: string | undefined, chatIds: string): void {
+  configService.get.mockImplementation((key: string) => {
+    if (key === 'TELEGRAM_BOT_TOKEN') return token;
+    if (key === 'TELEGRAM_CHAT_IDS') return chatIds;
+    return undefined;
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Scenario 1 — Happy path: message sent to each chat ID
 // ---------------------------------------------------------------------------
 describe('TelegramService – Scenario 1: sends message to all configured chat IDs', () => {
   beforeEach(() => {
-    configService.get.mockImplementation((key: string) => {
-      if (key === 'TELEGRAM_BOT_TOKEN') return 'test-token';
-      if (key === 'TELEGRAM_CHAT_IDS') return '111,222,333';
-      return undefined;
-    });
+    mockConfig('test-token', '111,222,333');
     mockedAxios.post.mockResolvedValue({ data: { ok: true } });
   });
 
@@ -54,11 +58,7 @@ describe('TelegramService – Scenario 1: sends message to all configured chat I
   });
 
   it('trims whitespace around chat IDs', async () => {
-    configService.get.mockImplementation((key: string) => {
-      if (key === 'TELEGRAM_BOT_TOKEN') return 'test-token';
-      if (key === 'TELEGRAM_CHAT_IDS') return ' 444 , 555 ';
-      return undefined;
-    });
+    mockConfig('test-token', ' 444 , 555 ');
     await service.sendMessage('trimmed');
     expect(mockedAxios.post).toHaveBeenCalledTimes(2);
     expect(mockedAxios.post).toHaveBeenCalledWith(
@@ -77,7 +77,7 @@ describe('TelegramService – Scenario 1: sends message to all configured chat I
 // ---------------------------------------------------------------------------
 describe('TelegramService – Scenario 2: throws when bot token is missing', () => {
   beforeEach(() => {
-    configService.get.mockReturnValue(undefined);
+    mockConfig(undefined, '');
   });
 
   it('rejects with a descriptive error message', async () => {
@@ -93,11 +93,7 @@ describe('TelegramService – Scenario 2: throws when bot token is missing', () 
 // ---------------------------------------------------------------------------
 describe('TelegramService – Scenario 3: no-op when chat IDs list is empty', () => {
   beforeEach(() => {
-    configService.get.mockImplementation((key: string) => {
-      if (key === 'TELEGRAM_BOT_TOKEN') return 'test-token';
-      if (key === 'TELEGRAM_CHAT_IDS') return '';
-      return undefined;
-    });
+    mockConfig('test-token', '');
   });
 
   it('does not call axios.post when chat IDs list is empty', async () => {
@@ -111,11 +107,7 @@ describe('TelegramService – Scenario 3: no-op when chat IDs list is empty', ()
 // ---------------------------------------------------------------------------
 describe('TelegramService – Scenario 4: propagates axios errors', () => {
   beforeEach(() => {
-    configService.get.mockImplementation((key: string) => {
-      if (key === 'TELEGRAM_BOT_TOKEN') return 'test-token';
-      if (key === 'TELEGRAM_CHAT_IDS') return '999';
-      return undefined;
-    });
+    mockConfig('test-token', '999');
     mockedAxios.post.mockRejectedValue(new Error('Network error'));
   });
 
