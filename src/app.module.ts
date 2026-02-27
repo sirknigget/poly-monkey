@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { typeOrmConfig } from './config/database.config';
 import { ActivityModule } from './activity/activity.module';
 import { NotificationModule } from './notification/notification.module';
+import { TransactionLogModule } from './transaction-log/transaction-log.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { NotificationModule } from './notification/notification.module';
     TypeOrmModule.forRootAsync(typeOrmConfig),
     ActivityModule,
     NotificationModule,
+    TransactionLogModule,
   ],
   controllers: [AppController],
   providers: [AppService],
