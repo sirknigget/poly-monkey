@@ -1,29 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigModule } from '@nestjs/config';
 import { NotificationModule } from '../src/notification/notification.module';
 import { TelegramService } from '../src/notification/telegram.service';
 import { NotificationFormattingService } from '../src/notification/notification-formatting.service';
-import * as fs from 'fs';
 import * as path from 'path';
-import {PolymarketActivity} from "../src/activity/activity.types";
-
-// Helper to manually load .env file for the E2E test if process.env is missing the vars.
-// This is useful running tests directly where a global dotenv setup isn't configured.
-function loadEnv() {
-  const envPath = path.resolve(__dirname, '../.env');
-  if (fs.existsSync(envPath)) {
-    const envConfig = fs.readFileSync(envPath, 'utf8');
-    envConfig.split('\n').forEach((line) => {
-      const match = line.match(/^([^#=]+)=(.*)$/);
-      if (match) {
-        const key = match[1].trim();
-        const value = match[2].trim();
-        if (!process.env[key]) {
-          process.env[key] = value;
-        }
-      }
-    });
-  }
-}
+import { PolymarketActivity } from '../src/activity/activity.types';
 
 describe('Notification Integration (e2e)', () => {
   let moduleFixture: TestingModule;
@@ -31,10 +12,14 @@ describe('Notification Integration (e2e)', () => {
   let formattingService: NotificationFormattingService;
 
   beforeAll(async () => {
-    loadEnv();
-
     moduleFixture = await Test.createTestingModule({
-      imports: [NotificationModule],
+      imports: [
+        ConfigModule.forRoot({
+          isGlobal: true,
+          envFilePath: path.resolve(__dirname, '../.env'),
+        }),
+        NotificationModule,
+      ],
     }).compile();
 
     telegramService = moduleFixture.get<TelegramService>(TelegramService);
@@ -48,7 +33,7 @@ describe('Notification Integration (e2e)', () => {
   });
 
   it('should format a mock activity and send it via Telegram (live API)', async () => {
-    // Check if variables are set
+    // Check if variables are set (ConfigModule.forRoot populates process.env from .env)
     const token = process.env.TELEGRAM_BOT_TOKEN;
     const chatIds = process.env.TELEGRAM_CHAT_IDS;
 

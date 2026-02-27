@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 
 /**
@@ -17,19 +18,21 @@ import axios from 'axios';
 export class TelegramService {
   private readonly logger = new Logger(TelegramService.name);
 
+  constructor(private readonly configService: ConfigService) {}
+
   /**
    * Broadcasts an HTML-formatted message to every configured chat ID.
    * Throws if TELEGRAM_BOT_TOKEN is not set.
    */
   async sendMessage(text: string): Promise<void> {
-    const token = process.env.TELEGRAM_BOT_TOKEN;
+    const token = this.configService.get<string>('TELEGRAM_BOT_TOKEN');
     if (!token) {
       throw new Error(
         'TELEGRAM_BOT_TOKEN is not set. Please configure it as an environment variable.',
       );
     }
 
-    const rawIds = process.env.TELEGRAM_CHAT_IDS ?? '';
+    const rawIds = this.configService.get<string>('TELEGRAM_CHAT_IDS') ?? '';
     const chatIds = rawIds
       .split(',')
       .map((id) => id.trim())
