@@ -46,7 +46,7 @@ describe('PolymarketActivityService (integration)', () => {
   });
 
   // AC: FR-3 / FR-5 field-shape AC — "Each returned item shall have all of the following fields
-  //     present and non-null/undefined: transactionHash, eventTitle, side, totalPriceUsd,
+  //     present and non-null/undefined: transactionHashes, eventTitle, side, totalPriceUsd,
   //     numTokens, outcomePurchased, date, eventLink, marketSlug, avgPricePerToken, activityCount"
   // Behavior: Every PolymarketActivity in the array satisfies the full PolymarketActivity contract
   // @category: core-functionality
@@ -54,7 +54,7 @@ describe('PolymarketActivityService (integration)', () => {
   // @complexity: medium
   // ROI: 82 | Business Value: 8 (data contract compliance) | Frequency: 10 (every consumer call)
   // Verification items:
-  // - transactionHash: defined and non-null
+  // - transactionHashes: non-empty array
   // - eventTitle: defined and non-null
   // - side: defined and non-null
   // - totalPriceUsd: defined and non-null
@@ -70,8 +70,8 @@ describe('PolymarketActivityService (integration)', () => {
     // Act: done in beforeAll
     // Assert
     for (const item of activities) {
-      expect(item.transactionHash).toBeDefined();
-      expect(item.transactionHash).not.toBeNull();
+      expect(Array.isArray(item.transactionHashes)).toBe(true);
+      expect(item.transactionHashes.length).toBeGreaterThan(0);
 
       expect(item.eventTitle).toBeDefined();
       expect(item.eventTitle).not.toBeNull();

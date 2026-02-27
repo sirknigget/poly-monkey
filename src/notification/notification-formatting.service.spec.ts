@@ -3,7 +3,7 @@ import { NotificationFormattingService } from './notification-formatting.service
 import { PolymarketActivity } from '../activity/activity.types';
 
 const FULL_ACTIVITY: PolymarketActivity = {
-  transactionHash: '0xAAA',
+  transactionHashes: ['0xAAA'],
   date: '1/1/2024, 12:00:00 AM',
   eventTitle: 'Will Bitcoin hit $100k?',
   eventLink: 'https://polymarket.com/event/bitcoin-100k',
@@ -14,6 +14,7 @@ const FULL_ACTIVITY: PolymarketActivity = {
   numTokens: 21.0,
   avgPricePerToken: 0.5,
   activityCount: 1,
+  orders: [{ tokenPrice: 0.5, numTokens: 21.0, priceUsdt: 10.5 }],
 };
 
 async function buildService(): Promise<NotificationFormattingService> {
@@ -79,6 +80,11 @@ describe('NotificationFormattingService – Scenario 1: full activity formatting
     const msg = service.format(FULL_ACTIVITY);
     expect(msg).toContain('1');
   });
+
+  it('does not include a breakdown line when all orders share the same price', () => {
+    const msg = service.format(FULL_ACTIVITY);
+    expect(msg).not.toContain('↳');
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -120,5 +126,49 @@ describe('NotificationFormattingService – Scenario 3: multi-trade group', () =
     const msg = service.format(activity);
     expect(msg).toContain('5');
     expect(msg).toContain('No, Yes');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Scenario 4 — Multi-price group: breakdown line rendered
+// ---------------------------------------------------------------------------
+describe('NotificationFormattingService – Scenario 4: multi-price breakdown', () => {
+  let service: NotificationFormattingService;
+
+  beforeAll(async () => {
+    service = await buildService();
+  });
+
+  it('includes a ↳ breakdown line when orders have distinct prices', () => {
+    const activity: PolymarketActivity = {
+      ...FULL_ACTIVITY,
+      totalPriceUsd: 441.32,
+      numTokens: 441.0,
+      avgPricePerToken: 0.7395,
+      activityCount: 3,
+      orders: [
+        { tokenPrice: 0.73, numTokens: 8.0, priceUsdt: 5.84 },
+        { tokenPrice: 0.7382, numTokens: 40.0, priceUsdt: 29.53 },
+        { tokenPrice: 0.74, numTokens: 393.0, priceUsdt: 290.82 },
+      ],
+    };
+    const msg = service.format(activity);
+    expect(msg).toContain('↳');
+    expect(msg).toContain('$0.7300 × 8.00t');
+    expect(msg).toContain('$0.7382 × 40.00t');
+    expect(msg).toContain('$0.7400 × 393.00t');
+  });
+
+  it('does not include a ↳ breakdown line when all orders share the same price', () => {
+    const activity: PolymarketActivity = {
+      ...FULL_ACTIVITY,
+      activityCount: 2,
+      orders: [
+        { tokenPrice: 0.5, numTokens: 10.0, priceUsdt: 5.0 },
+        { tokenPrice: 0.5, numTokens: 11.0, priceUsdt: 5.5 },
+      ],
+    };
+    const msg = service.format(activity);
+    expect(msg).not.toContain('↳');
   });
 });

@@ -12,7 +12,7 @@ describe('ActivityService', () => {
     mockApi = unitRef.get(PolymarketApiService);
   });
 
-  // FR-5/FR-6: single-record group → all 11 output fields populated correctly
+  // FR-5/FR-6: single-record group → all output fields populated correctly
   describe('single-record group output shape', () => {
     beforeEach(() => {
       mockApi.getActivities.mockResolvedValue([
@@ -31,11 +31,11 @@ describe('ActivityService', () => {
       ]);
     });
 
-    it('returns one record with all 11 fields at exact literal values', async () => {
+    it('returns one record with all fields at exact literal values', async () => {
       const result = await service.fetchActivities('0xtest', 1);
 
       expect(result.length).toBe(1);
-      expect(result[0].transactionHash).toBe('0xAAA');
+      expect(result[0].transactionHashes).toEqual(['0xAAA']);
       expect(result[0].activityCount).toBe(1);
       expect(result[0].totalPriceUsd).toBe(10.5);
       expect(result[0].numTokens).toBe(21.0);
@@ -48,11 +48,15 @@ describe('ActivityService', () => {
         'https://polymarket.com/event/test-market',
       );
       expect(result[0].date).toBe(new Date(1700000000 * 1000).toLocaleString());
+      expect(result[0].orders).toHaveLength(1);
+      expect(result[0].orders[0].tokenPrice).toBe(0.5);
+      expect(result[0].orders[0].numTokens).toBe(21.0);
+      expect(result[0].orders[0].priceUsdt).toBe(10.5);
     });
   });
 
-  // FR-5/FR-6: multi-record group → sums usdcSize/size, recomputes avg, sorts unique outcomes
-  describe('multi-record group aggregation math', () => {
+  // FR-5/FR-6: multi-record group with different outcomes → separate activities (outcome is part of composite key)
+  describe('multi-record group with different outcomes produces separate activities', () => {
     beforeEach(() => {
       mockApi.getActivities.mockResolvedValue([
         {
@@ -82,15 +86,10 @@ describe('ActivityService', () => {
       ]);
     });
 
-    it('sums usdcSize→totalPriceUsd, sums size→numTokens, recomputes avgPricePerToken, sorts unique outcomes', async () => {
+    it('returns two separate activities because outcome differs between records', async () => {
       const result = await service.fetchActivities('0xtest', 50);
 
-      expect(result.length).toBe(1);
-      expect(result[0].totalPriceUsd).toBe(15.0);
-      expect(result[0].numTokens).toBe(30.0);
-      expect(result[0].avgPricePerToken).toBe(0.5);
-      expect(result[0].outcomePurchased).toBe('No, Yes');
-      expect(result[0].activityCount).toBe(2);
+      expect(result.length).toBe(2);
     });
   });
 
@@ -125,7 +124,7 @@ describe('ActivityService', () => {
       ]);
     });
 
-    it('merges two records sharing the composite key into one with correct sums and first record transactionHash', async () => {
+    it('merges two records sharing the composite key into one with correct sums and both transactionHashes', async () => {
       const result = await service.fetchActivities('0xtest', 50);
 
       expect(result.length).toBe(1);
@@ -133,7 +132,19 @@ describe('ActivityService', () => {
       expect(result[0].numTokens).toBe(30.0);
       expect(result[0].avgPricePerToken).toBe(0.5);
       expect(result[0].activityCount).toBe(2);
-      expect(result[0].transactionHash).toBe('0xAAA');
+      expect(result[0].transactionHashes).toContain('0xAAA');
+      expect(result[0].transactionHashes).toContain('0xBBB');
+      expect(result[0].orders).toHaveLength(2);
+      expect(result[0].orders[0]).toEqual({
+        tokenPrice: 0.5,
+        numTokens: 20,
+        priceUsdt: 10,
+      });
+      expect(result[0].orders[1]).toEqual({
+        tokenPrice: 0.5,
+        numTokens: 10,
+        priceUsdt: 5,
+      });
     });
   });
 
