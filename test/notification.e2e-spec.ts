@@ -3,7 +3,6 @@ import { ConfigModule } from '@nestjs/config';
 import { NotificationModule } from '../src/notification/notification.module';
 import { TelegramService } from '../src/notification/telegram.service';
 import { NotificationFormattingService } from '../src/notification/notification-formatting.service';
-import * as path from 'path';
 import { PolymarketActivity } from '../src/activity/activity.types';
 
 describe('Notification Integration (e2e)', () => {
@@ -13,13 +12,7 @@ describe('Notification Integration (e2e)', () => {
 
   beforeAll(async () => {
     moduleFixture = await Test.createTestingModule({
-      imports: [
-        ConfigModule.forRoot({
-          isGlobal: true,
-          envFilePath: path.resolve(__dirname, '../.env'),
-        }),
-        NotificationModule,
-      ],
+      imports: [ConfigModule.forRoot({ isGlobal: true }), NotificationModule],
     }).compile();
 
     telegramService = moduleFixture.get<TelegramService>(TelegramService);

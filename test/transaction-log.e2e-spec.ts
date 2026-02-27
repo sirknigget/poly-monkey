@@ -1,4 +1,3 @@
-import * as path from 'path';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
@@ -16,10 +15,7 @@ describe('TransactionLogDao Integration', () => {
   beforeAll(async () => {
     moduleFixture = await Test.createTestingModule({
       imports: [
-        ConfigModule.forRoot({
-          isGlobal: true,
-          envFilePath: path.resolve(__dirname, '../.env'),
-        }),
+        ConfigModule.forRoot({ isGlobal: true }),
         TypeOrmModule.forRootAsync(typeOrmConfig),
         TransactionLogModule,
       ],
