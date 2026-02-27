@@ -7,6 +7,7 @@ import { typeOrmConfig } from './config/database.config';
 import { ActivityModule } from './activity/activity.module';
 import { NotificationModule } from './notification/notification.module';
 import { TransactionLogModule } from './transaction-log/transaction-log.module';
+import { LoggingModule } from './logging/logging.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { TransactionLogModule } from './transaction-log/transaction-log.module';
     ActivityModule,
     NotificationModule,
     TransactionLogModule,
+    LoggingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

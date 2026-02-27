@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PolymarketApiService } from '../polymarket-api/polymarket-api.service';
 import { RawActivity } from '../polymarket-api/polymarket-api.types';
 import { Order, PolymarketActivity } from './activity.types';
@@ -10,7 +10,10 @@ interface ActivityGroup {
 
 @Injectable()
 export class ActivityService {
-  constructor(private readonly polymarketApiService: PolymarketApiService) {}
+  constructor(
+    private readonly polymarketApiService: PolymarketApiService,
+    private readonly logger: Logger,
+  ) {}
 
   async fetchActivities(
     userAddress: string,
@@ -23,13 +26,19 @@ export class ActivityService {
 
     const groups = this.groupByCompositeKey(rawActivities);
 
-    return [...groups.values()]
+    const activities = [...groups.values()]
       .map(({ records, timestamp }) => ({
         activity: this.buildActivity(records, timestamp),
         timestamp,
       }))
       .sort((a, b) => b.timestamp - a.timestamp)
       .map((e) => e.activity);
+
+    this.logger.log(
+      `Aggregated ${rawActivities.length} raw records into ${activities.length} activities`,
+    );
+
+    return activities;
   }
 
   private groupByCompositeKey(

@@ -6,6 +6,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ActivityService } from '../src/activity/activity.service';
 import { ActivityModule } from '../src/activity/activity.module';
+import { Logger } from '@nestjs/common';
 
 const TEST_ADDRESS = '0x2005d16a84ceefa912d4e380cd32e7ff827875ea';
 
@@ -18,6 +19,9 @@ describe('PolymarketActivityService (integration)', () => {
     module = await Test.createTestingModule({
       imports: [ActivityModule],
     }).compile();
+
+    const app = module.createNestApplication();
+    app.useLogger(new Logger());
 
     service = module.get(ActivityService);
 

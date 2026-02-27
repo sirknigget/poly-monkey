@@ -16,9 +16,10 @@ import axios from 'axios';
  */
 @Injectable()
 export class TelegramService {
-  private readonly logger = new Logger(TelegramService.name);
-
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly logger: Logger,
+  ) {}
 
   /**
    * Broadcasts an HTML-formatted message to every configured chat ID.
@@ -47,6 +48,7 @@ export class TelegramService {
 
     const url = `https://api.telegram.org/bot${token}/sendMessage`;
 
+    this.logger.log(`Sending notification to ${chatIds.length} chat(s)`);
     await Promise.all(
       chatIds.map((chatId) =>
         axios.post(url, {
