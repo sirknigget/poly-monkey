@@ -44,7 +44,7 @@ describe('Notification Integration (e2e)', () => {
     }
 
     const mockActivity: PolymarketActivity = {
-      transactionHash: '0xmockhash1234567890abcdef',
+      transactionHashes: ['0xmockhash1234567890abcdef'],
       eventTitle: 'Integration Test Event: Will GPT-5 be released in 2026?',
       date: new Date().toISOString(),
       totalPriceUsd: 1337.42,
@@ -55,6 +55,7 @@ describe('Notification Integration (e2e)', () => {
       activityCount: 3,
       marketSlug: 'gpt-5-released-2026',
       eventLink: 'https://polymarket.com/event/gpt-5-released-2026',
+      orders: [{ tokenPrice: 0.5349, numTokens: 2500, priceUsdt: 1337.42 }],
     };
 
     const formattedMessage = formattingService.format(mockActivity);
