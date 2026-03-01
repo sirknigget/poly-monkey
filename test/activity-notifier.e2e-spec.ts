@@ -8,17 +8,13 @@ import { App } from 'supertest/types';
 import { typeOrmConfig } from '../src/config/database.config';
 import { ActivityModule } from '../src/activity/activity.module';
 import { PolymarketActivity } from '../src/activity/activity.entity';
-import { TransactionLog } from '../src/transaction-log/transaction-log.entity';
-import { TransactionLogModule } from '../src/transaction-log/transaction-log.module';
-import { TransactionLogDao } from '../src/transaction-log/transaction-log.dao';
 
 const TEST_ADDRESS = '0x2005d16a84ceefa912d4e380cd32e7ff827875ea';
-const DEFAULT_LIMIT = 10;
+const DEFAULT_LIMIT = 20;
 
 describe('ActivityNotifierController (e2e)', () => {
   let app: INestApplication<App>;
   let moduleFixture: TestingModule;
-  let transactionLogRepository: Repository<TransactionLog>;
   let activityRepository: Repository<PolymarketActivity>;
 
   beforeAll(async () => {
@@ -27,7 +23,6 @@ describe('ActivityNotifierController (e2e)', () => {
         ConfigModule.forRoot({ isGlobal: true }),
         TypeOrmModule.forRootAsync(typeOrmConfig),
         ActivityModule,
-        TransactionLogModule,
       ],
     }).compile();
 
@@ -35,21 +30,16 @@ describe('ActivityNotifierController (e2e)', () => {
     app.useLogger(new Logger());
     await app.init();
 
-    transactionLogRepository = moduleFixture.get<Repository<TransactionLog>>(
-      getRepositoryToken(TransactionLog),
-    );
     activityRepository = moduleFixture.get<Repository<PolymarketActivity>>(
       getRepositoryToken(PolymarketActivity),
     );
 
     // Ensure a clean slate regardless of previous interrupted runs.
-    await transactionLogRepository.clear();
     await activityRepository.clear();
   });
 
   afterAll(async () => {
     // Clean up DB state so re-runs see fresh activities and the pipeline executes fully.
-    await transactionLogRepository.clear();
     await activityRepository.clear();
     await app.close();
   });
@@ -68,14 +58,6 @@ describe('ActivityNotifierController (e2e)', () => {
       .post('/activity/notify')
       .send({ userAddress: TEST_ADDRESS, limit: DEFAULT_LIMIT })
       .expect(200);
-
-    const txLogs = await transactionLogRepository.find();
-    expect(txLogs.length).toBeGreaterThan(0);
-    txLogs.forEach((log) => {
-      expect(typeof log.transactionHash).toBe('string');
-      expect(log.transactionHash.length).toBeGreaterThan(0);
-      expect(log.activityTimestamp).toBeInstanceOf(Date);
-    });
 
     const activities = await activityRepository.find();
     expect(activities.length).toBeGreaterThan(0);

@@ -85,6 +85,59 @@ describe('ActivityDao Integration', () => {
     });
   });
 
+  describe('existsByAggregationKey', () => {
+    it('should return true when an activity with matching key exists', async () => {
+      await dao.add(
+        makeActivity({
+          timestamp: new Date('2024-01-15T12:00:00Z'),
+          marketSlug: 'test-market',
+          outcomePurchased: 'Yes',
+          side: 'BUY',
+        }),
+      );
+
+      const result = await dao.existsByAggregationKey(
+        new Date('2024-01-15T12:00:00Z'),
+        'test-market',
+        'Yes',
+        'BUY',
+      );
+
+      expect(result).toBe(true);
+    });
+
+    it('should return false when no activity with matching key exists', async () => {
+      const result = await dao.existsByAggregationKey(
+        new Date('2024-01-15T12:00:00Z'),
+        'nonexistent-market',
+        'No',
+        'SELL',
+      );
+
+      expect(result).toBe(false);
+    });
+
+    it('should return false when only some fields match', async () => {
+      await dao.add(
+        makeActivity({
+          timestamp: new Date('2024-01-15T12:00:00Z'),
+          marketSlug: 'test-market',
+          outcomePurchased: 'Yes',
+          side: 'BUY',
+        }),
+      );
+
+      const result = await dao.existsByAggregationKey(
+        new Date('2024-01-15T12:00:00Z'),
+        'test-market',
+        'No',
+        'BUY',
+      );
+
+      expect(result).toBe(false);
+    });
+  });
+
   describe('deleteOlderThan', () => {
     it('should delete activities with timestamp before the cutoff and keep newer ones', async () => {
       const cutoff = new Date('2024-06-01T00:00:00Z');
