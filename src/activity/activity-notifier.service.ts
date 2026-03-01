@@ -44,14 +44,14 @@ export class ActivityNotifierService {
       const message = this.notificationFormattingService.format(activity);
       await this.telegramService.sendMessage(message);
       await this.activityDao.add(activity);
+      await Promise.all(
+        activity.transactionHashes.map((h) => this.transactionLogDao.add(h)),
+      );
     }
 
-    const allHashes = newActivities.flatMap((a) => a.transactionHashes);
-    await Promise.all(allHashes.map((h) => this.transactionLogDao.add(h)));
     await this.transactionLogDao.deleteOlderThan(
       TRANSACTION_LOG_RETENTION_HOURS,
     );
-
     const activityCutoff = new Date(
       Date.now() - ACTIVITY_RETENTION_DAYS * 24 * 60 * 60 * 1000,
     );

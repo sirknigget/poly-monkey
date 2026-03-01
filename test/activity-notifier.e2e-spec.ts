@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, Logger } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -10,9 +10,10 @@ import { ActivityModule } from '../src/activity/activity.module';
 import { PolymarketActivity } from '../src/activity/activity.entity';
 import { TransactionLog } from '../src/transaction-log/transaction-log.entity';
 import { TransactionLogModule } from '../src/transaction-log/transaction-log.module';
+import { TransactionLogDao } from '../src/transaction-log/transaction-log.dao';
 
 const TEST_ADDRESS = '0x2005d16a84ceefa912d4e380cd32e7ff827875ea';
-const DEFAULT_LIMIT = 50;
+const DEFAULT_LIMIT = 10;
 
 describe('ActivityNotifierController (e2e)', () => {
   let app: INestApplication<App>;
@@ -31,6 +32,7 @@ describe('ActivityNotifierController (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.useLogger(new Logger());
     await app.init();
 
     transactionLogRepository = moduleFixture.get<Repository<TransactionLog>>(
@@ -39,6 +41,10 @@ describe('ActivityNotifierController (e2e)', () => {
     activityRepository = moduleFixture.get<Repository<PolymarketActivity>>(
       getRepositoryToken(PolymarketActivity),
     );
+
+    // Ensure a clean slate regardless of previous interrupted runs.
+    await transactionLogRepository.clear();
+    await activityRepository.clear();
   });
 
   afterAll(async () => {
