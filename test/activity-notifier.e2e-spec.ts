@@ -74,7 +74,7 @@ describe('ActivityNotifierController (e2e)', () => {
     txLogs.forEach((log) => {
       expect(typeof log.transactionHash).toBe('string');
       expect(log.transactionHash.length).toBeGreaterThan(0);
-      expect(log.createdAt).toBeInstanceOf(Date);
+      expect(log.activityTimestamp).toBeInstanceOf(Date);
     });
 
     const activities = await activityRepository.find();

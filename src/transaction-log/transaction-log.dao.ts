@@ -10,8 +10,8 @@ export class TransactionLogDao {
     private readonly repository: Repository<TransactionLog>,
   ) {}
 
-  async add(transactionHash: string): Promise<void> {
-    await this.repository.save({ transactionHash });
+  async add(transactionHash: string, activityTimestamp: Date): Promise<void> {
+    await this.repository.save({ transactionHash, activityTimestamp });
   }
 
   async existsByTransactionHash(transactionHash: string): Promise<boolean> {
@@ -21,6 +21,6 @@ export class TransactionLogDao {
 
   async deleteOlderThan(hours: number, now: Date = new Date()): Promise<void> {
     const cutoff = new Date(now.getTime() - hours * 60 * 60 * 1000);
-    await this.repository.delete({ createdAt: LessThan(cutoff) });
+    await this.repository.delete({ activityTimestamp: LessThan(cutoff) });
   }
 }

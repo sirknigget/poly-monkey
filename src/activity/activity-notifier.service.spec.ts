@@ -89,8 +89,14 @@ describe('ActivityNotifierService', () => {
         2,
         expect.objectContaining({ eventTitle: 'Event B' }),
       );
-      expect(mockTransactionLogDao.add).toHaveBeenCalledWith('0xAAA');
-      expect(mockTransactionLogDao.add).toHaveBeenCalledWith('0xBBB');
+      expect(mockTransactionLogDao.add).toHaveBeenCalledWith(
+        '0xAAA',
+        new Date('2025-01-01T00:00:00.000Z'),
+      );
+      expect(mockTransactionLogDao.add).toHaveBeenCalledWith(
+        '0xBBB',
+        new Date('2025-01-01T00:00:00.000Z'),
+      );
       expect(mockTransactionLogDao.deleteOlderThan).toHaveBeenCalledWith(1);
       expect(mockActivityDao.deleteOlderThan).toHaveBeenCalledTimes(1);
     });
@@ -121,8 +127,14 @@ describe('ActivityNotifierService', () => {
       expect(mockActivityDao.add).toHaveBeenCalledWith(
         expect.objectContaining({ eventTitle: 'New Event' }),
       );
-      expect(mockTransactionLogDao.add).toHaveBeenCalledWith('0xNEW');
-      expect(mockTransactionLogDao.add).not.toHaveBeenCalledWith('0xALREADY');
+      expect(mockTransactionLogDao.add).toHaveBeenCalledWith(
+        '0xNEW',
+        new Date('2025-01-01T00:00:00.000Z'),
+      );
+      expect(mockTransactionLogDao.add).not.toHaveBeenCalledWith(
+        '0xALREADY',
+        expect.any(Date),
+      );
       expect(mockTransactionLogDao.deleteOlderThan).toHaveBeenCalledWith(1);
       expect(mockActivityDao.deleteOlderThan).toHaveBeenCalledTimes(1);
     });

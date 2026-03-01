@@ -45,7 +45,9 @@ export class ActivityNotifierService {
       await this.telegramService.sendMessage(message);
       await this.activityDao.add(activity);
       await Promise.all(
-        activity.transactionHashes.map((h) => this.transactionLogDao.add(h)),
+        activity.transactionHashes.map((h) =>
+          this.transactionLogDao.add(h, activity.timestamp),
+        ),
       );
     }
 

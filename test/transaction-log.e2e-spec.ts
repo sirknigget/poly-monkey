@@ -37,7 +37,7 @@ describe('TransactionLogDao Integration', () => {
 
   describe('add', () => {
     it('should persist a transaction hash to the database', async () => {
-      await dao.add('0xabc123');
+      await dao.add('0xabc123', new Date('2025-01-01T00:00:00.000Z'));
 
       const rows = await repository.find();
       expect(rows).toHaveLength(1);
@@ -47,7 +47,7 @@ describe('TransactionLogDao Integration', () => {
 
   describe('existsByTransactionHash', () => {
     it('should return true when the transaction hash exists', async () => {
-      await dao.add('0xexists');
+      await dao.add('0xexists', new Date('2025-01-01T00:00:00.000Z'));
 
       const result = await dao.existsByTransactionHash('0xexists');
 
@@ -69,11 +69,11 @@ describe('TransactionLogDao Integration', () => {
 
       await repository.save({
         transactionHash: '0xold',
-        createdAt: twoHoursAgo,
+        activityTimestamp: twoHoursAgo,
       });
       await repository.save({
         transactionHash: '0xnew',
-        createdAt: oneMinuteAgo,
+        activityTimestamp: oneMinuteAgo,
       });
 
       await dao.deleteOlderThan(1, now);
@@ -88,8 +88,8 @@ describe('TransactionLogDao Integration', () => {
       const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
 
       await repository.save([
-        { transactionHash: '0xold1', createdAt: twoHoursAgo },
-        { transactionHash: '0xold2', createdAt: twoHoursAgo },
+        { transactionHash: '0xold1', activityTimestamp: twoHoursAgo },
+        { transactionHash: '0xold2', activityTimestamp: twoHoursAgo },
       ]);
 
       await dao.deleteOlderThan(1, now);
@@ -99,8 +99,8 @@ describe('TransactionLogDao Integration', () => {
     });
 
     it('should keep all entries when none are older than the cutoff', async () => {
-      await dao.add('0xfresh1');
-      await dao.add('0xfresh2');
+      await dao.add('0xfresh1', new Date());
+      await dao.add('0xfresh2', new Date());
 
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
       await dao.deleteOlderThan(24, oneHourAgo);
