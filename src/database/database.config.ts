@@ -3,24 +3,30 @@ import {
   TypeOrmModuleAsyncOptions,
   TypeOrmModuleOptions,
 } from '@nestjs/typeorm';
+import type { DataSourceOptions, LogLevel } from 'typeorm';
+
+export function buildTypeOrmOptions(
+  get: (key: string) => string,
+): DataSourceOptions {
+  return {
+    type: 'postgres',
+    host: get('DB_HOST'),
+    port: Number(get('DB_PORT')),
+    username: get('DB_USERNAME'),
+    password: get('DB_PASSWORD'),
+    database: get('DB_DATABASE'),
+    synchronize: false,
+    ssl: { rejectUnauthorized: false },
+    logging: ['error', 'schema', 'migration'],
+  };
+}
 
 export const typeOrmConfig: TypeOrmModuleAsyncOptions = {
   inject: [ConfigService],
-  useFactory: (configService: ConfigService): TypeOrmModuleOptions => ({
-    type: 'postgres',
-    host: configService.getOrThrow<string>('DB_HOST'),
-    port: configService.getOrThrow<number>('DB_PORT'),
-    username: configService.getOrThrow<string>('DB_USERNAME'),
-    password: configService.getOrThrow<string>('DB_PASSWORD'),
-    database: configService.getOrThrow<string>('DB_DATABASE'),
-    synchronize: false,
-    ssl: {
-      rejectUnauthorized: false,
-    },
+  useFactory: (configService: ConfigService) => ({
+    ...buildTypeOrmOptions((key) => configService.getOrThrow<string>(key)),
     autoLoadEntities: true,
     migrations: ['dist/database/migrations/*.js'],
-    entities: ['./**/*.entity.js'],
     migrationsRun: true,
-    logging: ['error', 'schema', 'migration'],
   }),
 };

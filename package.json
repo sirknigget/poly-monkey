@@ -17,7 +17,11 @@
     "test:watch": "jest --config jest.unit.config.js --watch",
     "test:cov": "jest --config jest.unit.config.js --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --config jest.unit.config.js --runInBand",
-    "test:e2e": "jest --config jest.e2e.config.js --runInBand"
+    "test:e2e": "jest --config jest.e2e.config.js --runInBand",
+    "migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/database/data-source.ts src/database/migrations/$0",
+    "migration:run": "typeorm-ts-node-commonjs migration:run -d src/database/data-source.ts",
+    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/database/data-source.ts",
+    "schema:drop": "typeorm-ts-node-commonjs schema:drop -d src/database/data-source.ts"
   },
   "dependencies": {
     "@nestjs/axios": "^4.0.1",
