@@ -7,7 +7,7 @@ module.exports = {
   rootDir: '.',
   testMatch: ['<rootDir>/test/**/*.e2e-spec.ts'],
   transform: { '^.+\\.(t|j)s$': 'ts-jest' },
-  testTimeout: 60000,
   testEnvironment: 'node',
   setupFiles: [envSetup],
+  setupFilesAfterEnv: ['<rootDir>/jest.e2e.setup.js'],
 };
