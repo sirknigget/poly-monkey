@@ -16,15 +16,19 @@ export function buildTypeOrmOptions(
     password: get('DB_PASSWORD'),
     database: get('DB_DATABASE'),
     synchronize: false,
-    ssl: { rejectUnauthorized: false },
     logging: ['error', 'schema', 'migration'],
+    ...(get('DB_USE_SSL') === 'true'
+      ? { ssl: { rejectUnauthorized: false } }
+      : {}),
   };
 }
 
 export const typeOrmConfig: TypeOrmModuleAsyncOptions = {
   inject: [ConfigService],
   useFactory: (configService: ConfigService) => ({
-    ...buildTypeOrmOptions((key) => configService.getOrThrow<string>(key)),
+    ...buildTypeOrmOptions((key) =>
+      configService.get<string>(key, configService.getOrThrow<string>(key)),
+    ),
     autoLoadEntities: true,
     migrations: ['dist/database/migrations/*.js'],
     migrationsRun: true,

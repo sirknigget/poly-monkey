@@ -141,3 +141,4 @@ vite.config.ts.timestamp-*
 /.claude/settings.local.json
 /test/research-out/*
 /.test.env
+/.prod.env
