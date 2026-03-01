@@ -1,0 +1,152 @@
+{
+  "info": {
+    "name": "Poly Monkey",
+    "description": "API collection for the Poly Monkey Polymarket activity notifier service.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "BASE_URL",
+      "value": "http://localhost:3000",
+      "type": "string",
+      "description": "Base URL of the running service"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{BASE_URL}}/",
+              "host": ["{{BASE_URL}}"],
+              "path": [""]
+            },
+            "description": "Returns a simple health string to confirm the service is running."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "text/html; charset=utf-8" }
+              ],
+              "body": "Hello World!"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Activity",
+      "item": [
+        {
+          "name": "Trigger Activity Notifications",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{BASE_URL}}/activity/notify",
+              "host": ["{{BASE_URL}}"],
+              "path": ["activity", "notify"]
+            },
+            "description": "Fetches recent Polymarket activity for all monitored user addresses, deduplicates against the database, and sends Telegram notifications for any new activity. Returns an empty body."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [],
+              "body": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "User Addresses",
+      "item": [
+        {
+          "name": "List User Addresses",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{BASE_URL}}/user-addresses",
+              "host": ["{{BASE_URL}}"],
+              "path": ["user-addresses"]
+            },
+            "description": "Returns all Polymarket wallet addresses currently configured for monitoring."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "[\"0xabc123...\", \"0xdef456...\"]"
+            }
+          ]
+        },
+        {
+          "name": "Add User Address",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{BASE_URL}}/user-addresses",
+              "host": ["{{BASE_URL}}"],
+              "path": ["user-addresses"]
+            },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"address\": \"{{USER_ADDRESS}}\"\n}",
+              "options": {
+                "raw": { "language": "json" }
+              }
+            },
+            "description": "Adds a Polymarket wallet address to the list of monitored addresses."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "header": [],
+              "body": ""
+            }
+          ]
+        },
+        {
+          "name": "Delete User Address",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{BASE_URL}}/user-addresses/{{USER_ADDRESS}}",
+              "host": ["{{BASE_URL}}"],
+              "path": ["user-addresses", "{{USER_ADDRESS}}"]
+            },
+            "description": "Removes a Polymarket wallet address from the monitored list. The address is passed as a URL path parameter."
+          },
+          "response": [
+            {
+              "name": "204 No Content",
+              "status": "No Content",
+              "code": 204,
+              "header": [],
+              "body": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
