@@ -1,7 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { Logger } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { typeOrmConfig } from '../src/config/database.config';
 import { ActivityService } from '../src/activity/activity.service';
 import { ActivityModule } from '../src/activity/activity.module';
-import { Logger } from '@nestjs/common';
 
 const TEST_ADDRESS = '0x2005d16a84ceefa912d4e380cd32e7ff827875ea';
 
@@ -12,7 +15,11 @@ describe('PolymarketActivityService (integration)', () => {
 
   beforeAll(async () => {
     module = await Test.createTestingModule({
-      imports: [ActivityModule],
+      imports: [
+        ConfigModule.forRoot({ isGlobal: true }),
+        TypeOrmModule.forRootAsync(typeOrmConfig),
+        ActivityModule,
+      ],
     }).compile();
 
     const app = module.createNestApplication();
@@ -54,8 +61,8 @@ describe('PolymarketActivityService (integration)', () => {
       expect(item.outcomePurchased).toBeDefined();
       expect(item.outcomePurchased).not.toBeNull();
 
-      expect(item.date).toBeDefined();
-      expect(item.date).not.toBeNull();
+      expect(item.timestamp).toBeDefined();
+      expect(item.timestamp).not.toBeNull();
 
       expect(item.eventLink).toBeDefined();
       expect(item.eventLink).not.toBeNull();

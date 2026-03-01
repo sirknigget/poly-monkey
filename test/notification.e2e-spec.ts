@@ -38,7 +38,7 @@ describe('Notification Integration (e2e)', () => {
     const mockActivity: PolymarketActivity = {
       transactionHashes: ['0xmockhash1234567890abcdef'],
       eventTitle: 'Integration Test Event: Will GPT-5 be released in 2026?',
-      date: new Date().toISOString(),
+      timestamp: new Date(),
       totalPriceUsd: 1337.42,
       numTokens: 2500,
       avgPricePerToken: 0.5349,
