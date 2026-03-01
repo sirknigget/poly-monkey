@@ -1,6 +1,7 @@
 import { TestBed, Mocked } from '@suites/unit';
 import { ActivityNotifierService } from './activity-notifier.service';
 import { ActivityService } from './activity.service';
+import { ActivityDao } from './activity.dao';
 import { TransactionLogDao } from '../transaction-log/transaction-log.dao';
 import { NotificationFormattingService } from '../notification/notification-formatting.service';
 import { TelegramService } from '../notification/telegram.service';
@@ -29,6 +30,7 @@ describe('ActivityNotifierService', () => {
   let service: ActivityNotifierService;
   let mockActivityService: Mocked<ActivityService>;
   let mockTransactionLogDao: Mocked<TransactionLogDao>;
+  let mockActivityDao: Mocked<ActivityDao>;
   let mockFormattingService: Mocked<NotificationFormattingService>;
   let mockTelegramService: Mocked<TelegramService>;
 
@@ -39,6 +41,7 @@ describe('ActivityNotifierService', () => {
     service = unit;
     mockActivityService = unitRef.get(ActivityService);
     mockTransactionLogDao = unitRef.get(TransactionLogDao);
+    mockActivityDao = unitRef.get(ActivityDao);
     mockFormattingService = unitRef.get(NotificationFormattingService);
     mockTelegramService = unitRef.get(TelegramService);
   });
@@ -48,6 +51,8 @@ describe('ActivityNotifierService', () => {
     mockTransactionLogDao.existsByTransactionHash.mockResolvedValue(false);
     mockTransactionLogDao.add.mockResolvedValue(undefined);
     mockTransactionLogDao.deleteOlderThan.mockResolvedValue(undefined);
+    mockActivityDao.add.mockResolvedValue(undefined);
+    mockActivityDao.deleteOlderThan.mockResolvedValue(undefined);
     mockTelegramService.sendMessage.mockResolvedValue(undefined);
     mockFormattingService.format.mockReturnValue('<b>Test Message</b>');
   });
@@ -63,7 +68,7 @@ describe('ActivityNotifierService', () => {
       );
     });
 
-    it('sends a notification for each activity, persists all hashes, and cleans up', async () => {
+    it('sends a notification for each activity, saves each activity, persists all hashes, and cleans up', async () => {
       await service.notifyNewActivities('0xuser', 50);
 
       expect(mockTelegramService.sendMessage).toHaveBeenCalledTimes(2);
@@ -75,9 +80,19 @@ describe('ActivityNotifierService', () => {
         2,
         '<b>Event B</b>',
       );
+      expect(mockActivityDao.add).toHaveBeenCalledTimes(2);
+      expect(mockActivityDao.add).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ eventTitle: 'Event A' }),
+      );
+      expect(mockActivityDao.add).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ eventTitle: 'Event B' }),
+      );
       expect(mockTransactionLogDao.add).toHaveBeenCalledWith('0xAAA');
       expect(mockTransactionLogDao.add).toHaveBeenCalledWith('0xBBB');
       expect(mockTransactionLogDao.deleteOlderThan).toHaveBeenCalledWith(1);
+      expect(mockActivityDao.deleteOlderThan).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -95,16 +110,21 @@ describe('ActivityNotifierService', () => {
       );
     });
 
-    it('sends notifications only for new activities and persists only their hashes', async () => {
+    it('sends notifications only for new activities, saves only new activities, and persists only their hashes', async () => {
       await service.notifyNewActivities('0xuser', 50);
 
       expect(mockTelegramService.sendMessage).toHaveBeenCalledTimes(1);
       expect(mockTelegramService.sendMessage).toHaveBeenCalledWith(
         '<b>New Event</b>',
       );
+      expect(mockActivityDao.add).toHaveBeenCalledTimes(1);
+      expect(mockActivityDao.add).toHaveBeenCalledWith(
+        expect.objectContaining({ eventTitle: 'New Event' }),
+      );
       expect(mockTransactionLogDao.add).toHaveBeenCalledWith('0xNEW');
       expect(mockTransactionLogDao.add).not.toHaveBeenCalledWith('0xALREADY');
       expect(mockTransactionLogDao.deleteOlderThan).toHaveBeenCalledWith(1);
+      expect(mockActivityDao.deleteOlderThan).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -122,8 +142,10 @@ describe('ActivityNotifierService', () => {
       await service.notifyNewActivities('0xuser', 50);
 
       expect(mockTelegramService.sendMessage).not.toHaveBeenCalled();
+      expect(mockActivityDao.add).not.toHaveBeenCalled();
       expect(mockTransactionLogDao.add).not.toHaveBeenCalled();
       expect(mockTransactionLogDao.deleteOlderThan).toHaveBeenCalledWith(1);
+      expect(mockActivityDao.deleteOlderThan).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -136,12 +158,14 @@ describe('ActivityNotifierService', () => {
       mockTransactionLogDao.existsByTransactionHash.mockResolvedValue(true);
     });
 
-    it('sends no notifications, persists no hashes, and still runs cleanup', async () => {
+    it('sends no notifications, saves no activities, persists no hashes, and still runs cleanup', async () => {
       await service.notifyNewActivities('0xuser', 50);
 
       expect(mockTelegramService.sendMessage).not.toHaveBeenCalled();
+      expect(mockActivityDao.add).not.toHaveBeenCalled();
       expect(mockTransactionLogDao.add).not.toHaveBeenCalled();
       expect(mockTransactionLogDao.deleteOlderThan).toHaveBeenCalledWith(1);
+      expect(mockActivityDao.deleteOlderThan).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -150,12 +174,14 @@ describe('ActivityNotifierService', () => {
       mockActivityService.fetchActivities.mockResolvedValue([]);
     });
 
-    it('sends no notifications, persists no hashes, and still runs cleanup', async () => {
+    it('sends no notifications, saves no activities, persists no hashes, and still runs cleanup', async () => {
       await service.notifyNewActivities('0xuser', 50);
 
       expect(mockTelegramService.sendMessage).not.toHaveBeenCalled();
+      expect(mockActivityDao.add).not.toHaveBeenCalled();
       expect(mockTransactionLogDao.add).not.toHaveBeenCalled();
       expect(mockTransactionLogDao.deleteOlderThan).toHaveBeenCalledWith(1);
+      expect(mockActivityDao.deleteOlderThan).toHaveBeenCalledTimes(1);
     });
   });
 });
