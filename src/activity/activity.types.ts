@@ -1,7 +1,7 @@
 export interface Order {
-  tokenPrice: number; // source: RawActivity.price ?? 0
-  numTokens: number; // source: RawActivity.size ?? 0
-  priceUsdt: number; // source: RawActivity.usdcSize ?? 0
+  tokenPrice: number;
+  numTokens: number;
+  priceUsdt: number;
 }
 
 export interface PolymarketActivity {

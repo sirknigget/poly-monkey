@@ -47,10 +47,10 @@ export class ActivityService {
     const groups = new Map<string, ActivityGroup>();
     for (const record of rawActivities) {
       const key = JSON.stringify([
-        record.timestamp ?? 0,
-        record.slug ?? '',
-        record.outcome ?? 'Unknown',
-        record.side ?? 'N/A',
+        record.timestamp,
+        record.slug,
+        record.outcome,
+        record.side,
       ]);
       const existing = groups.get(key);
       if (existing) {
@@ -58,7 +58,7 @@ export class ActivityService {
       } else {
         groups.set(key, {
           records: [record],
-          timestamp: record.timestamp ?? 0,
+          timestamp: record.timestamp,
         });
       }
     }
@@ -71,18 +71,18 @@ export class ActivityService {
   ): PolymarketActivity {
     const first = records[0];
     const totalPriceUsd = parseFloat(
-      records.reduce((sum, r) => sum + (r.usdcSize ?? 0), 0).toFixed(2),
+      records.reduce((sum, r) => sum + r.usdcSize, 0).toFixed(2),
     );
     const numTokens = parseFloat(
-      records.reduce((sum, r) => sum + (r.size ?? 0), 0).toFixed(2),
+      records.reduce((sum, r) => sum + r.size, 0).toFixed(2),
     );
     const avgPricePerToken = parseFloat(
       (numTokens === 0 ? 0 : totalPriceUsd / numTokens).toFixed(4),
     );
     const orders: Order[] = records.map((r) => ({
-      tokenPrice: r.price ?? 0,
-      numTokens: r.size ?? 0,
-      priceUsdt: r.usdcSize ?? 0,
+      tokenPrice: r.price,
+      numTokens: r.size,
+      priceUsdt: r.usdcSize,
     }));
     const transactionHashes = records
       .map((r) => r.transactionHash)
@@ -90,14 +90,12 @@ export class ActivityService {
 
     return {
       transactionHashes,
-      date: timestamp ? new Date(timestamp * 1000).toLocaleString() : 'N/A',
-      eventTitle: first.title ?? 'Unknown Event',
-      eventLink: first.eventSlug
-        ? `https://polymarket.com/event/${first.eventSlug}`
-        : 'N/A',
-      marketSlug: first.slug ?? '',
-      outcomePurchased: first.outcome ?? 'Unknown',
-      side: first.side ?? 'N/A',
+      date: new Date(timestamp * 1000).toLocaleString(),
+      eventTitle: first.title,
+      eventLink: `https://polymarket.com/event/${first.eventSlug}`,
+      marketSlug: first.slug,
+      outcomePurchased: first.outcome,
+      side: first.side,
       totalPriceUsd,
       numTokens,
       avgPricePerToken,

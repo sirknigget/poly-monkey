@@ -238,43 +238,4 @@ describe('ActivityService', () => {
       expect(result[2].date).toBe(new Date(1000 * 1000).toLocaleString());
     });
   });
-
-  // FR-8/FR-5: missing timestamp treated as 0 for sort → appears last with date='N/A'
-  describe('missing timestamp treated as 0 for sort', () => {
-    beforeEach(() => {
-      mockApi.getActivities.mockResolvedValue([
-        {
-          transactionHash: '0xHAS_TS',
-          timestamp: 1000000,
-          slug: 'slug-has-ts',
-          outcome: 'Yes',
-          side: 'BUY',
-          usdcSize: 1,
-          size: 2,
-          price: 0.5,
-          title: 'Has Timestamp',
-          eventSlug: 'event-has-ts',
-        },
-        {
-          transactionHash: '0xNO_TS',
-          slug: 'slug-no-ts',
-          outcome: 'Yes',
-          side: 'BUY',
-          usdcSize: 1,
-          size: 2,
-          price: 0.5,
-          title: 'No Timestamp',
-          eventSlug: 'event-no-ts',
-        },
-      ]);
-    });
-
-    it('places the record with a timestamp before the record missing a timestamp, and missing-timestamp date is N/A', async () => {
-      const result = await service.fetchActivities('0xtest', 50);
-
-      expect(result.length).toBe(2);
-      expect(result[0].date).not.toBe('N/A');
-      expect(result[1].date).toBe('N/A');
-    });
-  });
 });
