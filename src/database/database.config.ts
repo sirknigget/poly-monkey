@@ -13,11 +13,14 @@ export const typeOrmConfig: TypeOrmModuleAsyncOptions = {
     username: configService.getOrThrow<string>('DB_USERNAME'),
     password: configService.getOrThrow<string>('DB_PASSWORD'),
     database: configService.getOrThrow<string>('DB_DATABASE'),
-    autoLoadEntities: true,
-    synchronize:
-      configService.get<string>('NODE_ENV', 'development') !== 'production',
+    synchronize: false,
     ssl: {
       rejectUnauthorized: false,
     },
+    autoLoadEntities: true,
+    migrations: ['dist/database/migrations/*.js'],
+    entities: ['./**/*.entity.js'],
+    migrationsRun: true,
+    logging: ['error', 'schema', 'migration'],
   }),
 };

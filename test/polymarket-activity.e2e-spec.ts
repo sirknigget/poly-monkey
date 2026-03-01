@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { typeOrmConfig } from '../src/config/database.config';
+import { typeOrmConfig } from '../src/database/database.config';
 import { ActivityService } from '../src/activity/activity.service';
 import { ActivityModule } from '../src/activity/activity.module';
 

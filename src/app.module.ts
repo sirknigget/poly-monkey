@@ -3,7 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { typeOrmConfig } from './config/database.config';
+import { typeOrmConfig } from './database/database.config';
 import { ActivityModule } from './activity/activity.module';
 import { NotificationModule } from './notification/notification.module';
 import { LoggingModule } from './logging/logging.module';

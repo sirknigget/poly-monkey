@@ -5,7 +5,7 @@ import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import request from 'supertest';
 import { App } from 'supertest/types';
-import { typeOrmConfig } from '../src/config/database.config';
+import { typeOrmConfig } from '../src/database/database.config';
 import { ActivityModule } from '../src/activity/activity.module';
 import { PolymarketActivity } from '../src/activity/activity.entity';
 

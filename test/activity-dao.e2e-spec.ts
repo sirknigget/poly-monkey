@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { typeOrmConfig } from '../src/config/database.config';
+import { typeOrmConfig } from '../src/database/database.config';
 import { ActivityModule } from '../src/activity/activity.module';
 import { ActivityDao } from '../src/activity/activity.dao';
 import { PolymarketActivity } from '../src/activity/activity.entity';
