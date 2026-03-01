@@ -7,6 +7,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { typeOrmConfig } from '../src/config/database.config';
 import { ActivityModule } from '../src/activity/activity.module';
+import { PolymarketActivity } from '../src/activity/activity.entity';
 import { TransactionLog } from '../src/transaction-log/transaction-log.entity';
 import { TransactionLogModule } from '../src/transaction-log/transaction-log.module';
 
@@ -17,6 +18,7 @@ describe('ActivityNotifierController (e2e)', () => {
   let app: INestApplication<App>;
   let moduleFixture: TestingModule;
   let transactionLogRepository: Repository<TransactionLog>;
+  let activityRepository: Repository<PolymarketActivity>;
 
   beforeAll(async () => {
     moduleFixture = await Test.createTestingModule({
@@ -34,11 +36,15 @@ describe('ActivityNotifierController (e2e)', () => {
     transactionLogRepository = moduleFixture.get<Repository<TransactionLog>>(
       getRepositoryToken(TransactionLog),
     );
+    activityRepository = moduleFixture.get<Repository<PolymarketActivity>>(
+      getRepositoryToken(PolymarketActivity),
+    );
   });
 
   afterAll(async () => {
     // Clean up DB state so re-runs see fresh activities and the pipeline executes fully.
     await transactionLogRepository.clear();
+    await activityRepository.clear();
     await app.close();
   });
 
@@ -56,5 +62,24 @@ describe('ActivityNotifierController (e2e)', () => {
       .post('/activity/notify')
       .send({ userAddress: TEST_ADDRESS, limit: DEFAULT_LIMIT })
       .expect(200);
+
+    const txLogs = await transactionLogRepository.find();
+    expect(txLogs.length).toBeGreaterThan(0);
+    txLogs.forEach((log) => {
+      expect(typeof log.transactionHash).toBe('string');
+      expect(log.transactionHash.length).toBeGreaterThan(0);
+      expect(log.createdAt).toBeInstanceOf(Date);
+    });
+
+    const activities = await activityRepository.find();
+    expect(activities.length).toBeGreaterThan(0);
+    activities.forEach((activity) => {
+      expect(Array.isArray(activity.transactionHashes)).toBe(true);
+      expect(activity.transactionHashes.length).toBeGreaterThan(0);
+      expect(typeof activity.eventTitle).toBe('string');
+      expect(activity.eventTitle.length).toBeGreaterThan(0);
+      expect(activity.totalPriceUsd).toBeGreaterThan(0);
+      expect(activity.timestamp).toBeInstanceOf(Date);
+    });
   });
 });
