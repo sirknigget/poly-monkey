@@ -1,4 +1,5 @@
 import { TestBed, Mocked } from '@suites/unit';
+import { ConfigService } from '@nestjs/config';
 import { ActivityNotifierService } from './activity-notifier.service';
 import { ActivityService } from './activity.service';
 import { ActivityDao } from './activity.dao';
@@ -30,6 +31,7 @@ describe('ActivityNotifierService', () => {
   let mockActivityDao: Mocked<ActivityDao>;
   let mockFormattingService: Mocked<NotificationFormattingService>;
   let mockTelegramService: Mocked<TelegramService>;
+  let mockConfigService: Mocked<ConfigService>;
 
   beforeAll(async () => {
     const { unit, unitRef } = await TestBed.solitary(
@@ -40,10 +42,12 @@ describe('ActivityNotifierService', () => {
     mockActivityDao = unitRef.get(ActivityDao);
     mockFormattingService = unitRef.get(NotificationFormattingService);
     mockTelegramService = unitRef.get(TelegramService);
+    mockConfigService = unitRef.get(ConfigService);
   });
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockConfigService.getOrThrow.mockReturnValue('0xuser');
     mockActivityDao.existsByAggregationKey.mockResolvedValue(false);
     mockActivityDao.add.mockResolvedValue(undefined);
     mockActivityDao.deleteOlderThan.mockResolvedValue(undefined);
@@ -63,7 +67,7 @@ describe('ActivityNotifierService', () => {
     });
 
     it('sends a notification for each activity, saves each activity, and cleans up', async () => {
-      await service.notifyNewActivities('0xuser', 50);
+      await service.notifyNewActivities();
 
       expect(mockTelegramService.sendMessage).toHaveBeenCalledTimes(2);
       expect(mockTelegramService.sendMessage).toHaveBeenNthCalledWith(
@@ -102,7 +106,7 @@ describe('ActivityNotifierService', () => {
     });
 
     it('sends notifications only for new activities and saves only new ones', async () => {
-      await service.notifyNewActivities('0xuser', 50);
+      await service.notifyNewActivities();
 
       expect(mockTelegramService.sendMessage).toHaveBeenCalledTimes(1);
       expect(mockTelegramService.sendMessage).toHaveBeenCalledWith(
@@ -126,7 +130,7 @@ describe('ActivityNotifierService', () => {
     });
 
     it('sends no notifications, saves no activities, and still runs cleanup', async () => {
-      await service.notifyNewActivities('0xuser', 50);
+      await service.notifyNewActivities();
 
       expect(mockTelegramService.sendMessage).not.toHaveBeenCalled();
       expect(mockActivityDao.add).not.toHaveBeenCalled();
@@ -140,7 +144,7 @@ describe('ActivityNotifierService', () => {
     });
 
     it('sends no notifications, saves no activities, and still runs cleanup', async () => {
-      await service.notifyNewActivities('0xuser', 50);
+      await service.notifyNewActivities();
 
       expect(mockTelegramService.sendMessage).not.toHaveBeenCalled();
       expect(mockActivityDao.add).not.toHaveBeenCalled();

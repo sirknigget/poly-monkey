@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ActivityNotifierService } from './activity-notifier.service';
 
 @Controller('activity')
@@ -9,12 +9,7 @@ export class ActivityNotifierController {
 
   @Post('notify')
   @HttpCode(HttpStatus.OK)
-  async notify(
-    @Body() body: { userAddress: string; limit: number },
-  ): Promise<void> {
-    await this.activityNotifierService.notifyNewActivities(
-      body.userAddress,
-      body.limit,
-    );
+  async notify(): Promise<void> {
+    await this.activityNotifierService.notifyNewActivities();
   }
 }
