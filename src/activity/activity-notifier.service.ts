@@ -1,10 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { NotificationFormattingService } from '../notification/notification-formatting.service';
 import { TelegramService } from '../notification/telegram.service';
+import { UserAddressDao } from '../user-address/user-address.dao';
 import { ActivityService } from './activity.service';
 import { ActivityDao } from './activity.dao';
-import { PolymarketActivity } from './activity.entity';
 
 const FETCH_LIMIT = 100;
 const ACTIVITY_RETENTION_DAYS = 60;
@@ -17,15 +16,12 @@ export class ActivityNotifierService {
     private readonly activityDao: ActivityDao,
     private readonly notificationFormattingService: NotificationFormattingService,
     private readonly telegramService: TelegramService,
-    private readonly configService: ConfigService,
+    private readonly userAddressDao: UserAddressDao,
     private readonly logger: Logger,
   ) {}
 
   async notifyNewActivities(): Promise<void> {
-    const addressesRaw = this.configService.getOrThrow<string>(
-      'POLYMARKET_USER_ADDRESSES',
-    );
-    const addresses = addressesRaw.split(',').map((a) => a.trim());
+    const addresses = await this.userAddressDao.findAll();
 
     for (const address of addresses) {
       await this.notifyForAddress(address);

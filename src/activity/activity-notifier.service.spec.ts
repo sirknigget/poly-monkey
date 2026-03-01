@@ -1,10 +1,10 @@
 import { TestBed, Mocked } from '@suites/unit';
-import { ConfigService } from '@nestjs/config';
 import { ActivityNotifierService } from './activity-notifier.service';
 import { ActivityService } from './activity.service';
 import { ActivityDao } from './activity.dao';
 import { NotificationFormattingService } from '../notification/notification-formatting.service';
 import { TelegramService } from '../notification/telegram.service';
+import { UserAddressDao } from '../user-address/user-address.dao';
 import { PolymarketActivity } from './activity.entity';
 
 const makeActivity = (
@@ -31,7 +31,7 @@ describe('ActivityNotifierService', () => {
   let mockActivityDao: Mocked<ActivityDao>;
   let mockFormattingService: Mocked<NotificationFormattingService>;
   let mockTelegramService: Mocked<TelegramService>;
-  let mockConfigService: Mocked<ConfigService>;
+  let mockUserAddressDao: Mocked<UserAddressDao>;
 
   beforeAll(async () => {
     const { unit, unitRef } = await TestBed.solitary(
@@ -42,12 +42,12 @@ describe('ActivityNotifierService', () => {
     mockActivityDao = unitRef.get(ActivityDao);
     mockFormattingService = unitRef.get(NotificationFormattingService);
     mockTelegramService = unitRef.get(TelegramService);
-    mockConfigService = unitRef.get(ConfigService);
+    mockUserAddressDao = unitRef.get(UserAddressDao);
   });
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockConfigService.getOrThrow.mockReturnValue('0xuser');
+    mockUserAddressDao.findAll.mockResolvedValue(['0xuser']);
     mockActivityDao.existsByAggregationKey.mockResolvedValue(false);
     mockActivityDao.add.mockResolvedValue(undefined);
     mockActivityDao.deleteOlderThan.mockResolvedValue(undefined);
@@ -149,6 +149,49 @@ describe('ActivityNotifierService', () => {
       expect(mockTelegramService.sendMessage).not.toHaveBeenCalled();
       expect(mockActivityDao.add).not.toHaveBeenCalled();
       expect(mockActivityDao.deleteOlderThan).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('when no addresses are configured', () => {
+    beforeEach(() => {
+      mockUserAddressDao.findAll.mockResolvedValue([]);
+    });
+
+    it('sends no notifications and performs no cleanup', async () => {
+      await service.notifyNewActivities();
+
+      expect(mockActivityService.fetchActivities).not.toHaveBeenCalled();
+      expect(mockTelegramService.sendMessage).not.toHaveBeenCalled();
+      expect(mockActivityDao.deleteOlderThan).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('when multiple addresses are configured', () => {
+    beforeEach(() => {
+      mockUserAddressDao.findAll.mockResolvedValue(['0xAAA', '0xBBB']);
+      mockActivityService.fetchActivities.mockResolvedValue([
+        makeActivity({ eventTitle: 'Event' }),
+      ]);
+      mockFormattingService.format.mockReturnValue('<b>Event</b>');
+    });
+
+    it('processes each address independently', async () => {
+      await service.notifyNewActivities();
+
+      expect(mockActivityService.fetchActivities).toHaveBeenCalledTimes(2);
+      expect(mockActivityService.fetchActivities).toHaveBeenNthCalledWith(
+        1,
+        '0xAAA',
+        expect.any(Number),
+        expect.any(Number),
+      );
+      expect(mockActivityService.fetchActivities).toHaveBeenNthCalledWith(
+        2,
+        '0xBBB',
+        expect.any(Number),
+        expect.any(Number),
+      );
+      expect(mockActivityDao.deleteOlderThan).toHaveBeenCalledTimes(2);
     });
   });
 });

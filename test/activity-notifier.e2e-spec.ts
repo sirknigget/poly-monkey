@@ -7,15 +7,18 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { typeOrmConfig } from '../src/database/database.config';
 import { ActivityModule } from '../src/activity/activity.module';
+import { UserAddressModule } from '../src/user-address/user-address.module';
+import { UserAddressDao } from '../src/user-address/user-address.dao';
+import { UserAddress } from '../src/user-address/user-address.entity';
 import { PolymarketActivity } from '../src/activity/activity.entity';
 
 const TEST_ADDRESS = '0x2005d16a84ceefa912d4e380cd32e7ff827875ea';
-const DEFAULT_LIMIT = 50;
 
 describe('ActivityNotifierController (e2e)', () => {
   let app: INestApplication<App>;
   let moduleFixture: TestingModule;
   let activityRepository: Repository<PolymarketActivity>;
+  let userAddressRepository: Repository<UserAddress>;
 
   beforeAll(async () => {
     moduleFixture = await Test.createTestingModule({
@@ -23,6 +26,7 @@ describe('ActivityNotifierController (e2e)', () => {
         ConfigModule.forRoot({ isGlobal: true }),
         TypeOrmModule.forRootAsync(typeOrmConfig),
         ActivityModule,
+        UserAddressModule,
       ],
     }).compile();
 
@@ -33,14 +37,20 @@ describe('ActivityNotifierController (e2e)', () => {
     activityRepository = moduleFixture.get<Repository<PolymarketActivity>>(
       getRepositoryToken(PolymarketActivity),
     );
+    userAddressRepository = moduleFixture.get<Repository<UserAddress>>(
+      getRepositoryToken(UserAddress),
+    );
 
-    // Ensure a clean slate regardless of previous interrupted runs.
     await activityRepository.clear();
+    await userAddressRepository.clear();
+
+    const userAddressDao = moduleFixture.get<UserAddressDao>(UserAddressDao);
+    await userAddressDao.add(TEST_ADDRESS);
   });
 
   afterAll(async () => {
-    // Clean up DB state so re-runs see fresh activities and the pipeline executes fully.
     await activityRepository.clear();
+    await userAddressRepository.clear();
     await app.close();
   });
 
@@ -54,10 +64,7 @@ describe('ActivityNotifierController (e2e)', () => {
       );
     }
 
-    await request(app.getHttpServer())
-      .post('/activity/notify')
-      .send({ userAddress: TEST_ADDRESS, limit: DEFAULT_LIMIT })
-      .expect(200);
+    await request(app.getHttpServer()).post('/activity/notify').expect(200);
 
     const activities = await activityRepository.find();
     expect(activities.length).toBeGreaterThan(0);

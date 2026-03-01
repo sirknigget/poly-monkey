@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { LoggingModule } from '../logging/logging.module';
 import { NotificationModule } from '../notification/notification.module';
 import { PolymarketApiModule } from '../polymarket-api/polymarket-api.module';
+import { UserAddressModule } from '../user-address/user-address.module';
 import { ActivityNotifierController } from './activity-notifier.controller';
 import { ActivityNotifierService } from './activity-notifier.service';
 import { ActivityService } from './activity.service';
@@ -15,6 +16,7 @@ import { PolymarketActivity } from './activity.entity';
     PolymarketApiModule,
     LoggingModule,
     NotificationModule,
+    UserAddressModule,
   ],
   controllers: [ActivityNotifierController],
   providers: [ActivityService, ActivityNotifierService, ActivityDao],

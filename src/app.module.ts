@@ -7,6 +7,7 @@ import { typeOrmConfig } from './database/database.config';
 import { ActivityModule } from './activity/activity.module';
 import { NotificationModule } from './notification/notification.module';
 import { LoggingModule } from './logging/logging.module';
+import { UserAddressModule } from './user-address/user-address.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { LoggingModule } from './logging/logging.module';
     ActivityModule,
     NotificationModule,
     LoggingModule,
+    UserAddressModule,
   ],
   controllers: [AppController],
   providers: [AppService],
