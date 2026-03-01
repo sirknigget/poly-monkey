@@ -10,7 +10,7 @@ import { ActivityModule } from '../src/activity/activity.module';
 import { PolymarketActivity } from '../src/activity/activity.entity';
 
 const TEST_ADDRESS = '0x2005d16a84ceefa912d4e380cd32e7ff827875ea';
-const DEFAULT_LIMIT = 20;
+const DEFAULT_LIMIT = 50;
 
 describe('ActivityNotifierController (e2e)', () => {
   let app: INestApplication<App>;
