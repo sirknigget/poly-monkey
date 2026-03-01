@@ -7,6 +7,7 @@ import { TransactionLogModule } from '../transaction-log/transaction-log.module'
 import { ActivityNotifierController } from './activity-notifier.controller';
 import { ActivityNotifierService } from './activity-notifier.service';
 import { ActivityService } from './activity.service';
+import { ActivityDao } from './activity.dao';
 import { PolymarketActivity } from './activity.entity';
 
 @Module({
@@ -18,7 +19,7 @@ import { PolymarketActivity } from './activity.entity';
     NotificationModule,
   ],
   controllers: [ActivityNotifierController],
-  providers: [ActivityService, ActivityNotifierService],
-  exports: [ActivityService, ActivityNotifierService],
+  providers: [ActivityService, ActivityNotifierService, ActivityDao],
+  exports: [ActivityService, ActivityNotifierService, ActivityDao],
 })
 export class ActivityModule {}

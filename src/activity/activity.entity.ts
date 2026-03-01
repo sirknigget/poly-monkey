@@ -11,7 +11,7 @@ export class PolymarketActivity {
   @PrimaryGeneratedColumn()
   id?: number;
 
-  @Column({ type: 'jsonb' })
+  @Column({ type: 'text', array: true })
   transactionHashes: string[];
 
   @Column({ type: 'timestamp' })
