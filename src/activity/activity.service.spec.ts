@@ -32,7 +32,7 @@ describe('ActivityService', () => {
     });
 
     it('returns one record with all fields at exact literal values', async () => {
-      const result = await service.fetchActivities('0xtest', 1);
+      const result = await service.fetchActivities('0xtest', 1, 0);
 
       expect(result.length).toBe(1);
       expect(result[0].transactionHashes).toEqual(['0xAAA']);
@@ -87,7 +87,7 @@ describe('ActivityService', () => {
     });
 
     it('returns two separate activities because outcome differs between records', async () => {
-      const result = await service.fetchActivities('0xtest', 50);
+      const result = await service.fetchActivities('0xtest', 50, 0);
 
       expect(result.length).toBe(2);
     });
@@ -125,7 +125,7 @@ describe('ActivityService', () => {
     });
 
     it('merges two records sharing the composite key into one with correct sums and both transactionHashes', async () => {
-      const result = await service.fetchActivities('0xtest', 50);
+      const result = await service.fetchActivities('0xtest', 50, 0);
 
       expect(result.length).toBe(1);
       expect(result[0].totalPriceUsd).toBe(15.0);
@@ -180,9 +180,75 @@ describe('ActivityService', () => {
     });
 
     it('returns two separate records when slug differs between records with otherwise matching keys', async () => {
-      const result = await service.fetchActivities('0xtest', 50);
+      const result = await service.fetchActivities('0xtest', 50, 0);
 
       expect(result.length).toBe(2);
+    });
+  });
+
+  // fromTime filter: exclude activities older than cutoff
+  describe('fromTime filter excludes activities older than the cutoff', () => {
+    beforeEach(() => {
+      mockApi.getActivities.mockResolvedValue([
+        {
+          transactionHash: '0xOLD',
+          timestamp: 1699999999, // seconds; 1699999999 * 1000 < 1700000000000
+          slug: 'market-old',
+          outcome: 'Yes',
+          side: 'BUY',
+          usdcSize: 5,
+          size: 10,
+          price: 0.5,
+          title: 'Old Market',
+          eventSlug: 'old-event',
+        },
+        {
+          transactionHash: '0xNEW',
+          timestamp: 1700000001, // seconds; 1700000001 * 1000 > 1700000000000
+          slug: 'market-new',
+          outcome: 'Yes',
+          side: 'BUY',
+          usdcSize: 10,
+          size: 20,
+          price: 0.5,
+          title: 'New Market',
+          eventSlug: 'new-event',
+        },
+      ]);
+    });
+
+    it('excludes the older record and returns only the newer one', async () => {
+      const result = await service.fetchActivities('0xtest', 50, 1700000000000);
+
+      expect(result.length).toBe(1);
+      expect(result[0].marketSlug).toBe('market-new');
+    });
+  });
+
+  // fromTime filter: boundary — activity at exact threshold is included
+  describe('fromTime filter includes activity at exact threshold', () => {
+    beforeEach(() => {
+      mockApi.getActivities.mockResolvedValue([
+        {
+          transactionHash: '0xBOUND',
+          timestamp: 1700000000, // seconds; 1700000000 * 1000 === 1700000000000
+          slug: 'market-boundary',
+          outcome: 'Yes',
+          side: 'BUY',
+          usdcSize: 10,
+          size: 20,
+          price: 0.5,
+          title: 'Boundary Market',
+          eventSlug: 'boundary-event',
+        },
+      ]);
+    });
+
+    it('includes an activity whose timestamp exactly equals fromTime / 1000', async () => {
+      const result = await service.fetchActivities('0xtest', 50, 1700000000000);
+
+      expect(result.length).toBe(1);
+      expect(result[0].marketSlug).toBe('market-boundary');
     });
   });
 
@@ -230,7 +296,7 @@ describe('ActivityService', () => {
     });
 
     it('outputs three records ordered most-recent first: timestamps 3000, 2000, 1000', async () => {
-      const result = await service.fetchActivities('0xtest', 50);
+      const result = await service.fetchActivities('0xtest', 50, 0);
 
       expect(result.length).toBe(3);
       expect(result[0].timestamp).toEqual(new Date(3000 * 1000));

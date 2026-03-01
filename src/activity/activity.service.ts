@@ -18,13 +18,17 @@ export class ActivityService {
   async fetchActivities(
     userAddress: string,
     limit: number,
+    fromTime: number,
   ): Promise<PolymarketActivity[]> {
     const rawActivities = await this.polymarketApiService.getActivities(
       userAddress,
       limit,
     );
 
-    const groups = this.groupByCompositeKey(rawActivities);
+    const filtered = rawActivities.filter(
+      (r) => r.timestamp >= fromTime / 1000,
+    );
+    const groups = this.groupByCompositeKey(filtered);
 
     const activities = [...groups.values()]
       .map(({ records, timestamp }) => ({
@@ -35,7 +39,7 @@ export class ActivityService {
       .map((e) => e.activity);
 
     this.logger.log(
-      `Aggregated ${rawActivities.length} raw records into ${activities.length} activities`,
+      `Aggregated ${filtered.length} raw records into ${activities.length} activities`,
     );
 
     return activities;

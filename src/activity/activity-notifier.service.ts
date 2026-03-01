@@ -6,6 +6,7 @@ import { ActivityDao } from './activity.dao';
 import { PolymarketActivity } from './activity.entity';
 
 const ACTIVITY_RETENTION_DAYS = 60;
+const ACTIVITY_LOOKBACK_MS = 60 * 60 * 1000; // 1 hour
 
 @Injectable()
 export class ActivityNotifierService {
@@ -21,6 +22,7 @@ export class ActivityNotifierService {
     const activities = await this.activityService.fetchActivities(
       userAddress,
       limit,
+      Date.now() - ACTIVITY_LOOKBACK_MS,
     );
 
     const existsResults = await Promise.all(

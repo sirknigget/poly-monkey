@@ -29,7 +29,7 @@ describe('PolymarketActivityService (integration)', () => {
 
     // Single live API call shared across all assertions — avoids redundant network requests.
     // The address is known-active; a non-empty result is expected.
-    activities = await service.fetchActivities(TEST_ADDRESS, 50);
+    activities = await service.fetchActivities(TEST_ADDRESS, 50, 0);
   });
 
   afterAll(async () => {
