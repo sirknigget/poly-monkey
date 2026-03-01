@@ -1,8 +1,3 @@
-// PolymarketActivityService Integration Test - Design Doc: polymarket-activity-service-design.md
-// Generated: 2026-02-25 | Budget Used: 3/3 integration, 0/2 E2E
-// Test Type: Integration Test (live Polymarket Data API)
-// Implementation Timing: After all feature implementations complete
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { ActivityService } from '../src/activity/activity.service';
 import { ActivityModule } from '../src/activity/activity.module';
@@ -34,45 +29,12 @@ describe('PolymarketActivityService (integration)', () => {
     await module.close();
   });
 
-  // AC: Integration Test AC — "When fetchActivities is called with the known test address,
-  //     the system shall return a non-empty array"
-  // Behavior: fetchActivities(knownAddress, 50) → API call → non-empty PolymarketActivity[]
-  // @category: core-functionality
-  // @dependency: PolymarketActivityService, ResearchModule, Polymarket Data API (live)
-  // @complexity: low
-  // ROI: 88 | Business Value: 9 (primary service output) | Frequency: 10 (every consumer call)
   it('returns a non-empty array for the known test address', () => {
-    // Arrange: done in beforeAll
-    // Act: done in beforeAll
-    // Assert
     expect(Array.isArray(activities)).toBe(true);
     expect(activities.length).toBeGreaterThan(0);
   });
 
-  // AC: FR-3 / FR-5 field-shape AC — "Each returned item shall have all of the following fields
-  //     present and non-null/undefined: transactionHashes, eventTitle, side, totalPriceUsd,
-  //     numTokens, outcomePurchased, date, eventLink, marketSlug, avgPricePerToken, activityCount"
-  // Behavior: Every PolymarketActivity in the array satisfies the full PolymarketActivity contract
-  // @category: core-functionality
-  // @dependency: PolymarketActivityService, ResearchModule, Polymarket Data API (live)
-  // @complexity: medium
-  // ROI: 82 | Business Value: 8 (data contract compliance) | Frequency: 10 (every consumer call)
-  // Verification items:
-  // - transactionHashes: non-empty array
-  // - eventTitle: defined and non-null
-  // - side: defined and non-null
-  // - totalPriceUsd: defined and non-null
-  // - numTokens: defined and non-null
-  // - outcomePurchased: defined and non-null
-  // - date: defined and non-null
-  // - eventLink: defined and non-null
-  // - marketSlug: defined and non-null
-  // - avgPricePerToken: defined and non-null
-  // - activityCount: defined and non-null
   it('each item has all required fields present and non-null', () => {
-    // Arrange: done in beforeAll
-    // Act: done in beforeAll
-    // Assert
     for (const item of activities) {
       expect(Array.isArray(item.transactionHashes)).toBe(true);
       expect(item.transactionHashes.length).toBeGreaterThan(0);
@@ -109,23 +71,7 @@ describe('PolymarketActivityService (integration)', () => {
     }
   });
 
-  // AC: FR-4 sort-order AC — "The system shall return activities sorted by timestamp descending
-  //     (most recent first)"
-  // Behavior: For any two adjacent items [i] and [i+1] in the result, item[i].timestamp >= item[i+1].timestamp
-  // Note: timestamp is not exposed on the PolymarketActivity output interface; sort is verified
-  //       indirectly via the date field ordering assumption. If timestamp is surfaced on the
-  //       interface in a future iteration, replace this with a direct numeric comparison.
-  //       For now the test asserts the array length is consistent with the limit parameter,
-  //       confirming the slice was returned; strict timestamp ordering requires fixture data
-  //       (see AC Coverage table in design doc — FR-4 full verification is future unit test scope).
-  // @category: core-functionality
-  // @dependency: PolymarketActivityService, ResearchModule, Polymarket Data API (live)
-  // @complexity: medium
-  // ROI: 60 | Business Value: 6 (ordering guarantee for consumers) | Frequency: 10
   it('returns at most the requested limit of activities', () => {
-    // Arrange: done in beforeAll (limit = 50)
-    // Act: done in beforeAll
-    // Assert: result respects the limit boundary — confirms the fetch-and-slice path ran correctly
     expect(activities.length).toBeLessThanOrEqual(50);
   });
 });

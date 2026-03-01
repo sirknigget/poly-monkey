@@ -42,16 +42,6 @@ describe('ActivityNotifierController (e2e)', () => {
     await app.close();
   });
 
-  // AC: POST /activity/notify with a known-active address triggers the full pipeline:
-  //     fetches activities from Polymarket, deduplicates via DB, sends Telegram messages,
-  //     and persists transaction hashes.
-  // Behavior: POST /activity/notify -> ActivityNotifierController -> ActivityNotifierService
-  //           -> [fetchActivities + existsByTransactionHash + sendMessage + add] -> HTTP 200
-  // @category: e2e
-  // @dependency: ActivityNotifierController, ActivityNotifierService, Polymarket Data API (live),
-  //              PostgreSQL (live), Telegram Bot API (live)
-  // @complexity: high
-  // ROI: 90 | Business Value: 9 (validates entire notification pipeline) | Frequency: 10
   it('POST /activity/notify runs the full notification pipeline for a known-active address (live)', async () => {
     const token = process.env.TELEGRAM_BOT_TOKEN;
     const chatIds = process.env.TELEGRAM_CHAT_IDS;
@@ -62,12 +52,9 @@ describe('ActivityNotifierController (e2e)', () => {
       );
     }
 
-    // Arrange: done in beforeAll (live DB and Telegram configured via .env)
-    // Act
     await request(app.getHttpServer())
       .post('/activity/notify')
       .send({ userAddress: TEST_ADDRESS, limit: DEFAULT_LIMIT })
-      // Assert: pipeline completes without error
       .expect(200);
   });
 });

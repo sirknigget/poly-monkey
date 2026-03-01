@@ -26,7 +26,6 @@ describe('Notification Integration (e2e)', () => {
   });
 
   it('should format a mock activity and send it via Telegram (live API)', async () => {
-    // Check if variables are set (ConfigModule.forRoot populates process.env from .env)
     const token = process.env.TELEGRAM_BOT_TOKEN;
     const chatIds = process.env.TELEGRAM_CHAT_IDS;
 
@@ -53,8 +52,6 @@ describe('Notification Integration (e2e)', () => {
 
     const formattedMessage = formattingService.format(mockActivity);
 
-    // This should not throw if the API request succeeds.
-    // If it throws, the test will fail, indicating a problem with the integration or credentials.
     await expect(
       telegramService.sendMessage(formattedMessage),
     ).resolves.not.toThrow();
