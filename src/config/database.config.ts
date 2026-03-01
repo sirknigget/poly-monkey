@@ -1,5 +1,8 @@
 import { ConfigService } from '@nestjs/config';
-import { TypeOrmModuleAsyncOptions, TypeOrmModuleOptions } from '@nestjs/typeorm';
+import {
+  TypeOrmModuleAsyncOptions,
+  TypeOrmModuleOptions,
+} from '@nestjs/typeorm';
 
 export const typeOrmConfig: TypeOrmModuleAsyncOptions = {
   inject: [ConfigService],
@@ -11,6 +14,10 @@ export const typeOrmConfig: TypeOrmModuleAsyncOptions = {
     password: configService.getOrThrow<string>('DB_PASSWORD'),
     database: configService.getOrThrow<string>('DB_DATABASE'),
     autoLoadEntities: true,
-    synchronize: configService.get<string>('NODE_ENV', 'development') !== 'production',
+    synchronize:
+      configService.get<string>('NODE_ENV', 'development') !== 'production',
+    ssl: {
+      rejectUnauthorized: false,
+    },
   }),
 };

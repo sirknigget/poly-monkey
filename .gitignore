@@ -140,3 +140,4 @@ vite.config.ts.timestamp-*
 /.idea/*
 /.claude/settings.local.json
 /test/research-out/*
+/.test.env
