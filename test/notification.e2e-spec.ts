@@ -3,7 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { NotificationModule } from '../src/notification/notification.module';
 import { TelegramService } from '../src/notification/telegram.service';
 import { NotificationFormattingService } from '../src/notification/notification-formatting.service';
-import { PolymarketActivity } from '../src/activity/activity.types';
+import { PolymarketActivity } from '../src/activity/activity.entity';
 
 describe('Notification Integration (e2e)', () => {
   let moduleFixture: TestingModule;

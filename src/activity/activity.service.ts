@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PolymarketApiService } from '../polymarket-api/polymarket-api.service';
 import { RawActivity } from '../polymarket-api/polymarket-api.types';
-import { Order, PolymarketActivity } from './activity.types';
+import { Order, PolymarketActivity } from './activity.entity';
 
 interface ActivityGroup {
   records: RawActivity[];
@@ -90,7 +90,7 @@ export class ActivityService {
 
     return {
       transactionHashes,
-      date: new Date(timestamp * 1000).toLocaleString(),
+      timestamp: new Date(timestamp * 1000),
       eventTitle: first.title,
       eventLink: `https://polymarket.com/event/${first.eventSlug}`,
       marketSlug: first.slug,

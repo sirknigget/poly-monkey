@@ -1,10 +1,10 @@
 import { TestBed } from '@suites/unit';
 import { NotificationFormattingService } from './notification-formatting.service';
-import { PolymarketActivity } from '../activity/activity.types';
+import { PolymarketActivity } from '../activity/activity.entity';
 
 const FULL_ACTIVITY: PolymarketActivity = {
   transactionHashes: ['0xAAA'],
-  date: '1/1/2024, 12:00:00 AM',
+  timestamp: new Date('2024-01-01T00:00:00.000Z'),
   eventTitle: 'Will Bitcoin hit $100k?',
   eventLink: 'https://polymarket.com/event/bitcoin-100k',
   marketSlug: 'bitcoin-100k-jan',
@@ -73,7 +73,7 @@ describe('NotificationFormattingService – Scenario 1: full activity formatting
 
   it('includes the date', () => {
     const msg = service.format(FULL_ACTIVITY);
-    expect(msg).toContain('1/1/2024, 12:00:00 AM');
+    expect(msg).toContain(FULL_ACTIVITY.timestamp.toLocaleString());
   });
 
   it('includes the activityCount', () => {

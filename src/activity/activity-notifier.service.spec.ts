@@ -4,14 +4,14 @@ import { ActivityService } from './activity.service';
 import { TransactionLogDao } from '../transaction-log/transaction-log.dao';
 import { NotificationFormattingService } from '../notification/notification-formatting.service';
 import { TelegramService } from '../notification/telegram.service';
-import { PolymarketActivity } from './activity.types';
+import { PolymarketActivity } from './activity.entity';
 
 const makeActivity = (
   hashes: string[],
   overrides: Partial<PolymarketActivity> = {},
 ): PolymarketActivity => ({
   transactionHashes: hashes,
-  date: '1/1/2025, 12:00:00 AM',
+  timestamp: new Date('2025-01-01T00:00:00.000Z'),
   eventTitle: 'Test Event',
   eventLink: 'https://polymarket.com/event/test',
   marketSlug: 'test-slug',

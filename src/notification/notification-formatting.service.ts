@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PolymarketActivity } from '../activity/activity.types';
+import { PolymarketActivity } from '../activity/activity.entity';
 
 @Injectable()
 export class NotificationFormattingService {
@@ -39,7 +39,7 @@ export class NotificationFormattingService {
     return [
       `🎯 <b>${activity.eventTitle}</b>`,
       ``,
-      `📅 <b>Date:</b> ${activity.date}`,
+      `📅 <b>Date:</b> ${activity.timestamp.toLocaleString()}`,
       `💰 <b>Total (USD):</b> $${activity.totalPriceUsd.toFixed(2)}`,
       `🪙 <b>Tokens:</b> ${activity.numTokens.toFixed(2)}`,
       priceSection,

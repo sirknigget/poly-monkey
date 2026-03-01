@@ -47,7 +47,7 @@ describe('ActivityService', () => {
       expect(result[0].eventLink).toBe(
         'https://polymarket.com/event/test-market',
       );
-      expect(result[0].date).toBe(new Date(1700000000 * 1000).toLocaleString());
+      expect(result[0].timestamp).toEqual(new Date(1700000000 * 1000));
       expect(result[0].orders).toHaveLength(1);
       expect(result[0].orders[0].tokenPrice).toBe(0.5);
       expect(result[0].orders[0].numTokens).toBe(21.0);
@@ -233,9 +233,9 @@ describe('ActivityService', () => {
       const result = await service.fetchActivities('0xtest', 50);
 
       expect(result.length).toBe(3);
-      expect(result[0].date).toBe(new Date(3000 * 1000).toLocaleString());
-      expect(result[1].date).toBe(new Date(2000 * 1000).toLocaleString());
-      expect(result[2].date).toBe(new Date(1000 * 1000).toLocaleString());
+      expect(result[0].timestamp).toEqual(new Date(3000 * 1000));
+      expect(result[1].timestamp).toEqual(new Date(2000 * 1000));
+      expect(result[2].timestamp).toEqual(new Date(1000 * 1000));
     });
   });
 });
