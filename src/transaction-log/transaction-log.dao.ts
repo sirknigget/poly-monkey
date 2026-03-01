@@ -15,8 +15,7 @@ export class TransactionLogDao {
   }
 
   async existsByTransactionHash(transactionHash: string): Promise<boolean> {
-    const count = await this.repository.countBy({ transactionHash });
-    return count > 0;
+    return this.repository.existsBy({ transactionHash });
   }
 
   async deleteOlderThan(hours: number, now: Date = new Date()): Promise<void> {
