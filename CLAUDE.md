@@ -21,7 +21,7 @@ yarn lint               # ESLint with auto-fix
 yarn format             # Prettier --write
 
 # Database migrations
-yarn migration:generate src/database/migrations/MigrationName  # Generate migration from entity diff
+yarn migration:generate MigrationName  # Pass only the name — path prefix is baked into package.json
 yarn migration:run      # Run pending migrations
 yarn migration:revert   # Revert last migration
 yarn schema:drop        # Drop entire schema

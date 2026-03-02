@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
 export interface Order {
   tokenPrice: number;
@@ -6,6 +6,7 @@ export interface Order {
   priceUsdt: number;
 }
 
+@Index(['timestamp', 'marketSlug', 'outcomePurchased', 'side'])
 @Entity()
 export class PolymarketActivity {
   @PrimaryGeneratedColumn()
