@@ -23,6 +23,10 @@ export class ActivityNotifierService {
   async notifyNewActivities(): Promise<void> {
     const addresses = await this.userAddressDao.findAll();
 
+    this.logger.log(
+      `Found ${addresses.length} user addresses to check for activities`,
+    );
+
     for (const address of addresses) {
       await this.notifyForAddress(address);
     }
