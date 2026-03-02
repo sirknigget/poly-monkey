@@ -6,18 +6,19 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AdminAuthGuard } from '../auth/admin-auth.guard';
-import { ActivityNotifierService } from './activity-notifier.service';
+import { ActivityNotifierQueueService } from './activity-notifier-queue.service';
 
 @Controller('activity')
 @UseGuards(AdminAuthGuard)
 export class ActivityNotifierController {
   constructor(
-    private readonly activityNotifierService: ActivityNotifierService,
+    private readonly activityNotifierQueueService: ActivityNotifierQueueService,
   ) {}
 
   @Post('notify')
   @HttpCode(HttpStatus.OK)
-  async notify(): Promise<void> {
-    await this.activityNotifierService.notifyNewActivities();
+  async notify(): Promise<string> {
+    await this.activityNotifierQueueService.enqueueNotification();
+    return 'Triggered';
   }
 }

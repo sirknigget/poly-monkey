@@ -5,9 +5,8 @@ import { UserAddressDao } from '../user-address/user-address.dao';
 import { ActivityService } from './activity.service';
 import { ActivityDao } from './activity.dao';
 
-const FETCH_LIMIT = 100;
 const ACTIVITY_RETENTION_DAYS = 60;
-const ACTIVITY_LOOKBACK_MS = 60 * 60 * 1000; // 1 hour
+const ACTIVITY_LOOKBACK_MS = 5 * 60 * 1000; // 5 minutes
 
 @Injectable()
 export class ActivityNotifierService {
@@ -20,18 +19,21 @@ export class ActivityNotifierService {
     private readonly logger: Logger,
   ) {}
 
-  async notifyNewActivities(): Promise<void> {
+  async notifyNewActivities(fetchLimit: number): Promise<void> {
     const addresses = await this.userAddressDao.findAll();
 
     for (const address of addresses) {
-      await this.notifyForAddress(address);
+      await this.notifyForAddress(address, fetchLimit);
     }
   }
 
-  private async notifyForAddress(userAddress: string): Promise<void> {
+  private async notifyForAddress(
+    userAddress: string,
+    fetchLimit: number,
+  ): Promise<void> {
     const activities = await this.activityService.fetchActivities(
       userAddress,
-      FETCH_LIMIT,
+      fetchLimit,
       Date.now() - ACTIVITY_LOOKBACK_MS,
     );
 

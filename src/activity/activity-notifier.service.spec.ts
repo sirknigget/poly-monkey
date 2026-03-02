@@ -67,7 +67,7 @@ describe('ActivityNotifierService', () => {
     });
 
     it('sends a notification for each activity, saves each activity, and cleans up', async () => {
-      await service.notifyNewActivities();
+      await service.notifyNewActivities(100);
 
       expect(mockTelegramService.sendMessage).toHaveBeenCalledTimes(2);
       expect(mockTelegramService.sendMessage).toHaveBeenNthCalledWith(
@@ -106,7 +106,7 @@ describe('ActivityNotifierService', () => {
     });
 
     it('sends notifications only for new activities and saves only new ones', async () => {
-      await service.notifyNewActivities();
+      await service.notifyNewActivities(100);
 
       expect(mockTelegramService.sendMessage).toHaveBeenCalledTimes(1);
       expect(mockTelegramService.sendMessage).toHaveBeenCalledWith(
@@ -130,7 +130,7 @@ describe('ActivityNotifierService', () => {
     });
 
     it('sends no notifications, saves no activities, and still runs cleanup', async () => {
-      await service.notifyNewActivities();
+      await service.notifyNewActivities(100);
 
       expect(mockTelegramService.sendMessage).not.toHaveBeenCalled();
       expect(mockActivityDao.add).not.toHaveBeenCalled();
@@ -144,7 +144,7 @@ describe('ActivityNotifierService', () => {
     });
 
     it('sends no notifications, saves no activities, and still runs cleanup', async () => {
-      await service.notifyNewActivities();
+      await service.notifyNewActivities(100);
 
       expect(mockTelegramService.sendMessage).not.toHaveBeenCalled();
       expect(mockActivityDao.add).not.toHaveBeenCalled();
@@ -158,7 +158,7 @@ describe('ActivityNotifierService', () => {
     });
 
     it('sends no notifications and performs no cleanup', async () => {
-      await service.notifyNewActivities();
+      await service.notifyNewActivities(100);
 
       expect(mockActivityService.fetchActivities).not.toHaveBeenCalled();
       expect(mockTelegramService.sendMessage).not.toHaveBeenCalled();
@@ -176,7 +176,7 @@ describe('ActivityNotifierService', () => {
     });
 
     it('processes each address independently', async () => {
-      await service.notifyNewActivities();
+      await service.notifyNewActivities(100);
 
       expect(mockActivityService.fetchActivities).toHaveBeenCalledTimes(2);
       expect(mockActivityService.fetchActivities).toHaveBeenNthCalledWith(
