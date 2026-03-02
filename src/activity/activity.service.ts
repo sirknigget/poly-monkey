@@ -25,6 +25,21 @@ export class ActivityService {
       limit,
     );
 
+    const now = Date.now();
+    const latestRaw = rawActivities.reduce(
+      (max, r) => (r.timestamp > max ? r.timestamp : max),
+      0,
+    );
+    this.logger.debug(
+      `[date-debug] Date.now() UTC: ${new Date(now).toISOString()}, local: ${new Date(now).toString()}`,
+    );
+    this.logger.debug(
+      `[date-debug] Latest raw activity timestamp: ${latestRaw} → ${new Date(latestRaw * 1000).toISOString()} (raw count: ${rawActivities.length})`,
+    );
+    this.logger.debug(
+      `[date-debug] fromTime param: ${fromTime} → ${new Date(fromTime).toISOString()}, threshold (fromTime/1000): ${fromTime / 1000}`,
+    );
+
     const filtered = rawActivities.filter(
       (r) => r.timestamp >= fromTime / 1000,
     );
