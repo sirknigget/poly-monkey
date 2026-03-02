@@ -67,6 +67,10 @@ export class ActivityNotifierService {
       await this.activityDao.add(activity);
     }
 
+    this.logger.log(
+      `Finished processing activities for address ${userAddress}. ${newActivities.length} new notifications sent.`,
+    );
+
     const activityCutoff = new Date(
       Date.now() - ACTIVITY_RETENTION_DAYS * 24 * 60 * 60 * 1000,
     );
