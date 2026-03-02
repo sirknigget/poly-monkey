@@ -21,6 +21,7 @@ const TEST_ADDRESS = '0x2005d16a84ceefa912d4e380cd32e7ff827875ea';
 
 async function waitForQueueToDrain(
   queue: Queue,
+  baselineFailedCount: number,
   timeoutMs = 30000,
 ): Promise<void> {
   const start = Date.now();
@@ -32,8 +33,7 @@ async function waitForQueueToDrain(
       'delayed',
       'failed',
     );
-    console.log('Queue counts:', counts);
-    if (counts.failed > 0) {
+    if (counts.failed > baselineFailedCount) {
       const [failedJob] = await queue.getFailed(0, 0);
       throw new Error(
         `Job failed: ${failedJob?.failedReason}\n${failedJob?.stacktrace}`,
@@ -108,6 +108,8 @@ describe('ActivityNotifierController (e2e)', () => {
       );
     }
 
+    const { failed: baselineFailedCount } = await queue.getJobCounts('failed');
+
     const response = await request(app.getHttpServer())
       .post('/activity/notify')
       .expect(200);
@@ -116,18 +118,10 @@ describe('ActivityNotifierController (e2e)', () => {
 
     // The endpoint is non-blocking: activities are NOT in DB yet
     const immediateActivities = await activityRepository.find();
-    const immediateQueueCounts = await queue.getJobCounts(
-      'waiting',
-      'active',
-      'delayed',
-      'failed',
-      'completed',
-    );
-    console.log('Immediate queue counts after POST:', immediateQueueCounts);
     expect(immediateActivities.length).toBe(0);
 
     // Wait for the queue job to complete asynchronously
-    await waitForQueueToDrain(queue);
+    await waitForQueueToDrain(queue, baselineFailedCount);
 
     const activities = await activityRepository.find();
     expect(activities.length).toBeGreaterThan(0);
