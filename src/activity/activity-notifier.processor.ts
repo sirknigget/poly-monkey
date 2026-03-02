@@ -13,8 +13,8 @@ export class ActivityNotifierProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job<{ fetchLimit: number }>): Promise<void> {
+  async process(job: Job): Promise<void> {
     this.logger.log(`Processing job ${job.id}`);
-    await this.activityNotifierService.notifyNewActivities(job.data.fetchLimit);
+    await this.activityNotifierService.notifyNewActivities();
   }
 }

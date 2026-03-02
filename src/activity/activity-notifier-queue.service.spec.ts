@@ -1,6 +1,5 @@
 import { Test } from '@nestjs/testing';
 import { getQueueToken } from '@nestjs/bullmq';
-import { ConfigService } from '@nestjs/config';
 import { ActivityNotifierQueueService } from './activity-notifier-queue.service';
 import {
   ACTIVITY_NOTIFIER_QUEUE,
@@ -19,10 +18,6 @@ describe('ActivityNotifierQueueService', () => {
           provide: getQueueToken(ACTIVITY_NOTIFIER_QUEUE),
           useValue: mockQueue,
         },
-        {
-          provide: ConfigService,
-          useValue: { getOrThrow: (_key: string) => 10 },
-        },
       ],
     }).compile();
     service = module.get(ActivityNotifierQueueService);
@@ -30,13 +25,11 @@ describe('ActivityNotifierQueueService', () => {
 
   beforeEach(() => jest.clearAllMocks());
 
-  it('adds a notify job with fetchLimit from config', async () => {
+  it('adds a notify job with empty data', async () => {
     mockQueue.add.mockResolvedValue({ id: '1' });
 
     await service.enqueueNotification();
 
-    expect(mockQueue.add).toHaveBeenCalledWith(NOTIFY_JOB_NAME, {
-      fetchLimit: 10,
-    });
+    expect(mockQueue.add).toHaveBeenCalledWith(NOTIFY_JOB_NAME, {});
   });
 });

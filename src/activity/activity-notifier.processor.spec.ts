@@ -19,15 +19,9 @@ describe('ActivityNotifierProcessor', () => {
     mockService.notifyNewActivities.mockResolvedValue(undefined);
   });
 
-  it('delegates to ActivityNotifierService with fetchLimit from job data', async () => {
-    await processor.process({ data: { fetchLimit: 10 } } as any);
+  it('delegates to ActivityNotifierService', async () => {
+    await processor.process({ id: 'job-1' } as any);
 
-    expect(mockService.notifyNewActivities).toHaveBeenCalledWith(10);
-  });
-
-  it('delegates to ActivityNotifierService with undefined when job data has no fetchLimit', async () => {
-    await processor.process({ data: {} } as any);
-
-    expect(mockService.notifyNewActivities).toHaveBeenCalledWith(undefined);
+    expect(mockService.notifyNewActivities).toHaveBeenCalledTimes(1);
   });
 });

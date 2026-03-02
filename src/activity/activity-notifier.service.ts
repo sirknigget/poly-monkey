@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { NotificationFormattingService } from '../notification/notification-formatting.service';
 import { TelegramService } from '../notification/telegram.service';
 import { UserAddressDao } from '../user-address/user-address.dao';
@@ -6,7 +7,6 @@ import { ActivityService } from './activity.service';
 import { ActivityDao } from './activity.dao';
 
 const ACTIVITY_RETENTION_DAYS = 60;
-const ACTIVITY_LOOKBACK_MS = 5 * 60 * 1000; // 5 minutes
 
 @Injectable()
 export class ActivityNotifierService {
@@ -17,24 +17,28 @@ export class ActivityNotifierService {
     private readonly telegramService: TelegramService,
     private readonly userAddressDao: UserAddressDao,
     private readonly logger: Logger,
+    private readonly configService: ConfigService,
   ) {}
 
-  async notifyNewActivities(fetchLimit: number): Promise<void> {
+  async notifyNewActivities(): Promise<void> {
     const addresses = await this.userAddressDao.findAll();
 
     for (const address of addresses) {
-      await this.notifyForAddress(address, fetchLimit);
+      await this.notifyForAddress(address);
     }
   }
 
-  private async notifyForAddress(
-    userAddress: string,
-    fetchLimit: number,
-  ): Promise<void> {
+  private async notifyForAddress(userAddress: string): Promise<void> {
+    const fetchLimit = this.configService.getOrThrow<number>(
+      'ACTIVITY_FETCH_LIMIT',
+    );
+    const lookbackMs = this.configService.getOrThrow<number>(
+      'ACTIVITY_LOOKBACK_MS',
+    );
     const activities = await this.activityService.fetchActivities(
       userAddress,
       fetchLimit,
-      Date.now() - ACTIVITY_LOOKBACK_MS,
+      Date.now() - lookbackMs,
     );
 
     const existsResults = await Promise.all(

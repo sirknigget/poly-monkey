@@ -2,13 +2,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, Logger } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
-import { BullModule } from '@nestjs/bullmq';
-import { getQueueToken } from '@nestjs/bullmq';
+import { BullModule, getQueueToken } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { Repository } from 'typeorm';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { typeOrmConfig } from '../src/database/database.config';
+import { bullConfig } from '../src/queue/queue.config';
 import { ActivityModule } from '../src/activity/activity.module';
 import { UserAddressModule } from '../src/user-address/user-address.module';
 import { UserAddressDao } from '../src/user-address/user-address.dao';
@@ -24,10 +24,21 @@ async function waitForQueueToDrain(
   timeoutMs = 30000,
 ): Promise<void> {
   const start = Date.now();
-  // Give the worker a moment to pick up the job
   await new Promise((r) => setTimeout(r, 200));
   while (Date.now() - start < timeoutMs) {
-    const counts = await queue.getJobCounts('waiting', 'active', 'delayed');
+    const counts = await queue.getJobCounts(
+      'waiting',
+      'active',
+      'delayed',
+      'failed',
+    );
+    console.log('Queue counts:', counts);
+    if (counts.failed > 0) {
+      const [failedJob] = await queue.getFailed(0, 0);
+      throw new Error(
+        `Job failed: ${failedJob?.failedReason}\n${failedJob?.stacktrace}`,
+      );
+    }
     if (counts.waiting === 0 && counts.active === 0 && counts.delayed === 0) {
       return;
     }
@@ -45,17 +56,13 @@ describe('ActivityNotifierController (e2e)', () => {
 
   beforeAll(async () => {
     process.env.ACTIVITY_FETCH_LIMIT = '10';
+    process.env.ACTIVITY_LOOKBACK_MS = String(60 * 60 * 1000); // 1 hour
 
     moduleFixture = await Test.createTestingModule({
       imports: [
         ConfigModule.forRoot({ isGlobal: true }),
         TypeOrmModule.forRootAsync(typeOrmConfig),
-        BullModule.forRoot({
-          connection: {
-            host: process.env.REDIS_HOST || 'localhost',
-            port: parseInt(process.env.REDIS_PORT || '6379', 10),
-          },
-        }),
+        BullModule.forRootAsync(bullConfig),
         ActivityModule,
         UserAddressModule,
       ],
@@ -87,6 +94,7 @@ describe('ActivityNotifierController (e2e)', () => {
     await activityRepository.clear();
     await userAddressRepository.clear();
     delete process.env.ACTIVITY_FETCH_LIMIT;
+    delete process.env.ACTIVITY_LOOKBACK_MS;
     await app.close();
   });
 
@@ -108,6 +116,14 @@ describe('ActivityNotifierController (e2e)', () => {
 
     // The endpoint is non-blocking: activities are NOT in DB yet
     const immediateActivities = await activityRepository.find();
+    const immediateQueueCounts = await queue.getJobCounts(
+      'waiting',
+      'active',
+      'delayed',
+      'failed',
+      'completed',
+    );
+    console.log('Immediate queue counts after POST:', immediateQueueCounts);
     expect(immediateActivities.length).toBe(0);
 
     // Wait for the queue job to complete asynchronously
