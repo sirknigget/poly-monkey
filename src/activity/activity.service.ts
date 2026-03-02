@@ -32,7 +32,7 @@ export class ActivityService {
 
     const activities = [...groups.values()]
       .map(({ records, timestamp }) => ({
-        activity: this.buildActivity(records, timestamp),
+        activity: this.buildActivity(records, timestamp, userAddress),
         timestamp,
       }))
       .sort((a, b) => b.timestamp - a.timestamp)
@@ -72,6 +72,7 @@ export class ActivityService {
   private buildActivity(
     records: RawActivity[],
     timestamp: number,
+    userAddress: string,
   ): PolymarketActivity {
     const first = records[0];
     const totalPriceUsd = parseFloat(
@@ -94,6 +95,7 @@ export class ActivityService {
 
     return {
       transactionHashes,
+      userAddress,
       timestamp: new Date(timestamp * 1000),
       eventTitle: first.title,
       eventLink: `https://polymarket.com/event/${first.eventSlug}`,

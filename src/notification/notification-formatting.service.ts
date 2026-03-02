@@ -36,6 +36,8 @@ export class NotificationFormattingService {
       priceSection = `${avgPriceLine}\n   ↳ ${breakdown}`;
     }
 
+    const profileLink = `👤 <a href="https://polymarket.com/${activity.userAddress}">User profile</a>`;
+
     return [
       `🎯 <b>${activity.eventTitle}</b>`,
       ``,
@@ -48,6 +50,7 @@ export class NotificationFormattingService {
       `🔢 <b>Trades in group:</b> ${activity.activityCount}`,
       ``,
       link,
+      profileLink,
     ].join('\n');
   }
 }

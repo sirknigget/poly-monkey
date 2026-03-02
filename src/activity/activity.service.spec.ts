@@ -36,6 +36,7 @@ describe('ActivityService', () => {
 
       expect(result.length).toBe(1);
       expect(result[0].transactionHashes).toEqual(['0xAAA']);
+      expect(result[0].userAddress).toBe('0xtest');
       expect(result[0].activityCount).toBe(1);
       expect(result[0].totalPriceUsd).toBe(10.5);
       expect(result[0].numTokens).toBe(21.0);

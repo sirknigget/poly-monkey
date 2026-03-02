@@ -4,6 +4,7 @@ import { PolymarketActivity } from '../activity/activity.entity';
 
 const FULL_ACTIVITY: PolymarketActivity = {
   transactionHashes: ['0xAAA'],
+  userAddress: '0xabc123',
   timestamp: new Date('2024-01-01T00:00:00.000Z'),
   eventTitle: 'Will Bitcoin hit $100k?',
   eventLink: 'https://polymarket.com/event/bitcoin-100k',
@@ -85,6 +86,13 @@ describe('NotificationFormattingService – Scenario 1: full activity formatting
     const msg = service.format(FULL_ACTIVITY);
     expect(msg).not.toContain('↳');
   });
+
+  it('includes a clickable user profile link with the correct href', () => {
+    const msg = service.format(FULL_ACTIVITY);
+    expect(msg).toContain(
+      '<a href="https://polymarket.com/0xabc123">View profile</a>',
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -101,7 +109,7 @@ describe('NotificationFormattingService – Scenario 2: missing eventLink', () =
     const activity: PolymarketActivity = { ...FULL_ACTIVITY, eventLink: 'N/A' };
     const msg = service.format(activity);
     expect(msg).toContain('🔗 N/A');
-    expect(msg).not.toContain('<a href');
+    expect(msg).not.toContain('View on Polymarket');
   });
 });
 

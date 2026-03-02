@@ -19,12 +19,14 @@ export class ActivityDao {
     marketSlug: string,
     outcomePurchased: string,
     side: string,
+    userAddress: string,
   ): Promise<boolean> {
     return this.repository.existsBy({
       timestamp,
       marketSlug,
       outcomePurchased,
       side,
+      userAddress,
     });
   }
 

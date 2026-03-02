@@ -52,6 +52,7 @@ export class ActivityNotifierService {
           activity.marketSlug,
           activity.outcomePurchased,
           activity.side,
+          activity.userAddress,
         ),
       ),
     );

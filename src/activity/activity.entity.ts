@@ -6,7 +6,7 @@ export interface Order {
   priceUsdt: number;
 }
 
-@Index(['timestamp', 'marketSlug', 'outcomePurchased', 'side'])
+@Index(['timestamp', 'marketSlug', 'outcomePurchased', 'side', 'userAddress'])
 @Entity()
 export class PolymarketActivity {
   @PrimaryGeneratedColumn()
@@ -17,6 +17,9 @@ export class PolymarketActivity {
 
   @Column({ type: 'timestamp' })
   timestamp: Date;
+
+  @Column()
+  userAddress: string;
 
   @Column()
   eventTitle: string;

@@ -12,6 +12,7 @@ const makeActivity = (
   overrides: Partial<PolymarketActivity> = {},
 ): PolymarketActivity => ({
   transactionHashes: ['0xAAA'],
+  userAddress: '0xuser',
   timestamp: new Date('2025-01-01T00:00:00.000Z'),
   eventTitle: 'Test Event',
   eventLink: 'https://polymarket.com/event/test',

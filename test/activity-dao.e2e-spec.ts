@@ -12,6 +12,7 @@ function makeActivity(
 ): PolymarketActivity {
   return Object.assign(new PolymarketActivity(), {
     transactionHashes: ['0xAAA', '0xBBB'],
+    userAddress: '0xuser',
     timestamp: new Date('2024-01-15T12:00:00Z'),
     eventTitle: 'Test Event',
     eventLink: 'https://polymarket.com/event/test',
@@ -93,6 +94,7 @@ describe('ActivityDao Integration', () => {
           marketSlug: 'test-market',
           outcomePurchased: 'Yes',
           side: 'BUY',
+          userAddress: '0xuser',
         }),
       );
 
@@ -101,6 +103,7 @@ describe('ActivityDao Integration', () => {
         'test-market',
         'Yes',
         'BUY',
+        '0xuser',
       );
 
       expect(result).toBe(true);
@@ -112,6 +115,7 @@ describe('ActivityDao Integration', () => {
         'nonexistent-market',
         'No',
         'SELL',
+        '0xuser',
       );
 
       expect(result).toBe(false);
@@ -124,6 +128,7 @@ describe('ActivityDao Integration', () => {
           marketSlug: 'test-market',
           outcomePurchased: 'Yes',
           side: 'BUY',
+          userAddress: '0xuser',
         }),
       );
 
@@ -132,6 +137,29 @@ describe('ActivityDao Integration', () => {
         'test-market',
         'No',
         'BUY',
+        '0xuser',
+      );
+
+      expect(result).toBe(false);
+    });
+
+    it('should return false when userAddress differs', async () => {
+      await dao.add(
+        makeActivity({
+          timestamp: new Date('2024-01-15T12:00:00Z'),
+          marketSlug: 'test-market',
+          outcomePurchased: 'Yes',
+          side: 'BUY',
+          userAddress: '0xuser',
+        }),
+      );
+
+      const result = await dao.existsByAggregationKey(
+        new Date('2024-01-15T12:00:00Z'),
+        'test-market',
+        'Yes',
+        'BUY',
+        '0xother',
       );
 
       expect(result).toBe(false);
