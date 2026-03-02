@@ -7,10 +7,13 @@ import {
   HttpStatus,
   Param,
   Post,
+  UseGuards,
 } from '@nestjs/common';
 import { UserAddressDao } from './user-address.dao';
+import { AdminAuthGuard } from '../auth/admin-auth.guard';
 
 @Controller('user-addresses')
+@UseGuards(AdminAuthGuard)
 export class UserAddressController {
   constructor(private readonly userAddressDao: UserAddressDao) {}
 
