@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AdminAuthGuard } from '../auth/admin-auth.guard';
 import { LoggingModule } from '../logging/logging.module';
 import { NotificationModule } from '../notification/notification.module';
 import { PolymarketApiModule } from '../polymarket-api/polymarket-api.module';
@@ -19,7 +20,12 @@ import { PolymarketActivity } from './activity.entity';
     UserAddressModule,
   ],
   controllers: [ActivityNotifierController],
-  providers: [ActivityService, ActivityNotifierService, ActivityDao],
+  providers: [
+    ActivityService,
+    ActivityNotifierService,
+    ActivityDao,
+    AdminAuthGuard,
+  ],
   exports: [ActivityService, ActivityNotifierService, ActivityDao],
 })
 export class ActivityModule {}
