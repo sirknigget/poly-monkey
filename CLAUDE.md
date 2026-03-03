@@ -27,7 +27,7 @@ yarn migration:revert   # Revert last migration
 yarn schema:drop        # Drop entire schema
 
 # Local infrastructure
-docker-compose up -d    # Start PostgreSQL 16 container
+docker-compose up -d    # Start PostgreSQL 16 + Redis containers
 ```
 
 To run a single unit test file:
@@ -39,8 +39,11 @@ yarn test -- activity.service.spec.ts
 
 `.env` already exists and is configured, but is not readable by Claude. Reference `.env.template` for the required variable names:
 - `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_IDS` — required for notification delivery; comma-separated IDs
-- `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_DATABASE` — required at startup (`getOrThrow` enforces this)
-- `POLYMARKET_USER_ADDRESSES` — comma-separated Polymarket wallet addresses to monitor
+- `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_DATABASE`, `DB_USE_SSL` — required at startup (`getOrThrow` enforces this)
+- `ADMIN_KEY_HASH` — bcrypt hash used by `AdminAuthGuard`; all endpoints require `x-admin-key` header
+- `REDIS_HOST`, `REDIS_PORT` — BullMQ queue connection
+- `ACTIVITY_FETCH_LIMIT` — optional, defaults to 100; max raw activities fetched per address
+- `ACTIVITY_LOOKBACK_MS` — lookback window in milliseconds for fetching activities
 
 The E2E notification test reads `.env` directly if env vars aren't already set.
 
@@ -51,6 +54,10 @@ The E2E notification test reads `.env` directly if env vars aren't already set.
 ```
 ActivityNotifierController
         ↓
+ActivityNotifierQueueService (enqueue to BullMQ)
+        ↓ (BullMQ job)
+ActivityNotifierProcessor (consume)
+        ↓
 ActivityNotifierService
         ↓               ↓              ↓
 ActivityService    ActivityDao    TelegramService
@@ -59,16 +66,20 @@ PolymarketApiModule
 (HTTP transport)
 ```
 
-1. **`polymarket-api/`** — thin HTTP wrapper around `data-api.polymarket.com/activity`. One public method: `getActivities(userAddress, limit)` returning raw `RawActivity[]`.
+1. **`polymarket-api/`** — thin HTTP wrapper around `data-api.polymarket.com/activity`. Public methods: `getActivities(userAddress, limit)` returning `RawActivity[]`, and `getProfile(userAddress)` returning `PolymarketProfile | null`.
 
-2. **`activity/`** — business logic across three components:
+2. **`activity/`** — business logic across four components:
+   - `ActivityNotifierQueueService`: enqueues a job; reads `ACTIVITY_FETCH_LIMIT` from env.
+   - `ActivityNotifierProcessor` (`@Processor`): consumes jobs and delegates to `ActivityNotifierService`.
    - `ActivityService.fetchActivities(userAddress, limit, fromTime)`: groups `RawActivity` records by composite key `[timestamp, slug, outcome, side]`, aggregates each group (sum `usdcSize` → `totalPriceUsd`, sum `size` → `numTokens`), sorts descending by timestamp.
-   - `ActivityDao`: TypeORM repository wrapper. Checks deduplication by aggregation key `[timestamp, marketSlug, outcomePurchased, side]`, persists seen activities, prunes records older than 60 days.
-   - `ActivityNotifierService`: orchestrator. For each address in `POLYMARKET_USER_ADDRESSES`, fetches activities from the last hour, filters out already-seen ones via `ActivityDao`, sends Telegram messages for new ones, then persists them.
+   - `ActivityDao`: TypeORM repository wrapper. Checks deduplication by aggregation key `[timestamp, marketSlug, outcomePurchased, side, userAddress]`, persists seen activities, prunes records older than 60 days.
+   - `ActivityNotifierService`: orchestrator. Reads addresses from `UserAddressDao`, fetches activities within the `ACTIVITY_LOOKBACK_MS` window, filters already-seen via `ActivityDao`, sends Telegram messages for new ones, then persists them.
 
-3. **`notification/`** — `NotificationFormattingService` renders HTML for Telegram; `TelegramService` broadcasts to all configured chat IDs in parallel.
+3. **`notification/`** — `NotificationFormattingService` renders HTML for Telegram (includes user profile name if available); `TelegramService` broadcasts to all configured chat IDs in parallel.
 
-**Root module** (`app.module.ts`) wires: `ConfigModule` (global), `TypeOrmModule` (async), `ActivityModule`, `NotificationModule`, `LoggingModule`.
+4. **`user-address/`** — manages which Polymarket wallet addresses to monitor, stored in DB (not env). `UserAddressController` exposes CRUD at `POST /user-addresses`, `DELETE /user-addresses/:address`, `GET /user-addresses`, and `PUT /user-addresses/profiles/refresh`. `UserManagerService.add()` fetches the Polymarket profile and stores it alongside the address.
+
+**Root module** (`app.module.ts`) wires: `ConfigModule` (global), `TypeOrmModule` (async), `BullModule` (async), `ActivityModule`, `NotificationModule`, `LoggingModule`, `UserAddressModule`.
 
 **Database** (`src/config/database.config.ts`): TypeORM async config; `synchronize: false` always — schema managed via migrations. `migrationsRun: true` means migrations run automatically at startup. Data source for CLI is `src/database/data-source.ts`.
 
