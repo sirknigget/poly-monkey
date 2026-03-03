@@ -7,6 +7,7 @@ import { NotificationFormattingService } from '../notification/notification-form
 import { TelegramService } from '../notification/telegram.service';
 import { UserAddressDao } from '../user-address/user-address.dao';
 import { PolymarketActivity } from './activity.entity';
+import { UserAddress } from '../user-address/user-address.entity';
 
 const makeActivity = (
   overrides: Partial<PolymarketActivity> = {},
@@ -24,6 +25,12 @@ const makeActivity = (
   avgPricePerToken: 0.5,
   activityCount: 1,
   orders: [{ tokenPrice: 0.5, numTokens: 20, priceUsdt: 10 }],
+  ...overrides,
+});
+
+const makeUser = (overrides: Partial<UserAddress> = {}): UserAddress => ({
+  address: '0xuser',
+  profile: null,
   ...overrides,
 });
 
@@ -55,7 +62,7 @@ describe('ActivityNotifierService', () => {
       if (key === 'ACTIVITY_FETCH_LIMIT') return 100;
       if (key === 'ACTIVITY_LOOKBACK_MS') return 300000;
     });
-    mockUserAddressDao.findAll.mockResolvedValue(['0xuser']);
+    mockUserAddressDao.findAll.mockResolvedValue([makeUser()]);
     mockActivityDao.existsByAggregationKey.mockResolvedValue(false);
     mockActivityDao.add.mockResolvedValue(undefined);
     mockActivityDao.deleteOlderThan.mockResolvedValue(undefined);
@@ -176,7 +183,10 @@ describe('ActivityNotifierService', () => {
 
   describe('when multiple addresses are configured', () => {
     beforeEach(() => {
-      mockUserAddressDao.findAll.mockResolvedValue(['0xAAA', '0xBBB']);
+      mockUserAddressDao.findAll.mockResolvedValue([
+        makeUser({ address: '0xAAA' }),
+        makeUser({ address: '0xBBB' }),
+      ]);
       mockActivityService.fetchActivities.mockResolvedValue([
         makeActivity({ eventTitle: 'Event' }),
       ]);
@@ -200,6 +210,46 @@ describe('ActivityNotifierService', () => {
         expect.any(Number),
       );
       expect(mockActivityDao.deleteOlderThan).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('when user has a profile with a name', () => {
+    beforeEach(() => {
+      mockUserAddressDao.findAll.mockResolvedValue([
+        makeUser({ address: '0xuser', profile: { name: 'Alice' } }),
+      ]);
+      mockActivityService.fetchActivities.mockResolvedValue([
+        makeActivity({ eventTitle: 'Event A' }),
+      ]);
+    });
+
+    it('passes the profile to the formatting service', async () => {
+      await service.notifyNewActivities();
+
+      expect(mockFormattingService.format).toHaveBeenCalledWith(
+        expect.objectContaining({ eventTitle: 'Event A' }),
+        { name: 'Alice' },
+      );
+    });
+  });
+
+  describe('when user has no profile', () => {
+    beforeEach(() => {
+      mockUserAddressDao.findAll.mockResolvedValue([
+        makeUser({ address: '0xuser', profile: null }),
+      ]);
+      mockActivityService.fetchActivities.mockResolvedValue([
+        makeActivity({ eventTitle: 'Event A' }),
+      ]);
+    });
+
+    it('passes null profile to the formatting service', async () => {
+      await service.notifyNewActivities();
+
+      expect(mockFormattingService.format).toHaveBeenCalledWith(
+        expect.objectContaining({ eventTitle: 'Event A' }),
+        null,
+      );
     });
   });
 });

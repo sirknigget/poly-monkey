@@ -36,12 +36,13 @@ describe('UserAddressDao Integration', () => {
   });
 
   describe('add', () => {
-    it('persists a new address', async () => {
+    it('persists a new address with null profile', async () => {
       await dao.add('0xABC');
 
       const rows = await repository.find();
       expect(rows).toHaveLength(1);
       expect(rows[0].address).toBe('0xABC');
+      expect(rows[0].profile).toBeNull();
     });
 
     it('adding the same address twice does not create a duplicate', async () => {
@@ -74,15 +75,15 @@ describe('UserAddressDao Integration', () => {
       expect(result).toEqual([]);
     });
 
-    it('returns all stored addresses', async () => {
+    it('returns all stored UserAddress entities', async () => {
       await dao.add('0xABC');
       await dao.add('0xDEF');
 
       const result = await dao.findAll();
 
       expect(result).toHaveLength(2);
-      expect(result).toContain('0xABC');
-      expect(result).toContain('0xDEF');
+      expect(result.map((r) => r.address)).toContain('0xABC');
+      expect(result.map((r) => r.address)).toContain('0xDEF');
     });
 
     it('does not return a deleted address', async () => {
@@ -92,7 +93,45 @@ describe('UserAddressDao Integration', () => {
 
       const result = await dao.findAll();
 
-      expect(result).toEqual(['0xDEF']);
+      expect(result).toHaveLength(1);
+      expect(result[0].address).toBe('0xDEF');
+    });
+  });
+
+  describe('updateProfile', () => {
+    it('stores a profile on an existing address', async () => {
+      await dao.add('0xABC');
+      await dao.updateProfile('0xABC', { name: 'Alice', pseudonym: 'alice42' });
+
+      const rows = await repository.find();
+      expect(rows[0].profile).toEqual({ name: 'Alice', pseudonym: 'alice42' });
+    });
+
+    it('overwrites a previously stored profile', async () => {
+      await dao.add('0xABC');
+      await dao.updateProfile('0xABC', { name: 'Alice' });
+      await dao.updateProfile('0xABC', { name: 'Bob' });
+
+      const rows = await repository.find();
+      expect(rows[0].profile).toEqual({ name: 'Bob' });
+    });
+
+    it('clears a profile by setting null', async () => {
+      await dao.add('0xABC');
+      await dao.updateProfile('0xABC', { name: 'Alice' });
+      await dao.updateProfile('0xABC', null);
+
+      const rows = await repository.find();
+      expect(rows[0].profile).toBeNull();
+    });
+
+    it('findAll returns the profile stored for each address', async () => {
+      await dao.add('0xABC');
+      await dao.updateProfile('0xABC', { name: 'Alice' });
+
+      const result = await dao.findAll();
+
+      expect(result[0].profile).toEqual({ name: 'Alice' });
     });
   });
 });

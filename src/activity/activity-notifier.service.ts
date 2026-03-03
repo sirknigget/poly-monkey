@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NotificationFormattingService } from '../notification/notification-formatting.service';
 import { TelegramService } from '../notification/telegram.service';
+import { UserAddress } from '../user-address/user-address.entity';
 import { UserAddressDao } from '../user-address/user-address.dao';
 import { ActivityService } from './activity.service';
 import { ActivityDao } from './activity.dao';
@@ -21,18 +22,18 @@ export class ActivityNotifierService {
   ) {}
 
   async notifyNewActivities(): Promise<void> {
-    const addresses = await this.userAddressDao.findAll();
+    const users = await this.userAddressDao.findAll();
 
     this.logger.log(
-      `Found ${addresses.length} user addresses to check for activities`,
+      `Found ${users.length} user addresses to check for activities`,
     );
 
-    for (const address of addresses) {
-      await this.notifyForAddress(address);
+    for (const user of users) {
+      await this.notifyForAddress(user);
     }
   }
 
-  private async notifyForAddress(userAddress: string): Promise<void> {
+  private async notifyForAddress(user: UserAddress): Promise<void> {
     const fetchLimit = this.configService.getOrThrow<number>(
       'ACTIVITY_FETCH_LIMIT',
     );
@@ -40,7 +41,7 @@ export class ActivityNotifierService {
       'ACTIVITY_LOOKBACK_MS',
     );
     const activities = await this.activityService.fetchActivities(
-      userAddress,
+      user.address,
       fetchLimit,
       Date.now() - lookbackMs,
     );
@@ -63,13 +64,16 @@ export class ActivityNotifierService {
     );
 
     for (const activity of newActivities) {
-      const message = this.notificationFormattingService.format(activity);
+      const message = this.notificationFormattingService.format(
+        activity,
+        user.profile,
+      );
       await this.telegramService.sendMessage(message);
       await this.activityDao.add(activity);
     }
 
     this.logger.log(
-      `Finished processing activities for address ${userAddress}. ${newActivities.length} new notifications sent.`,
+      `Finished processing activities for address ${user.address}. ${newActivities.length} new notifications sent.`,
     );
 
     const activityCutoff = new Date(

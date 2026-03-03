@@ -1,13 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { PolymarketActivity } from '../activity/activity.entity';
+import { PolymarketProfile } from '../polymarket-api/polymarket-api.types';
 
 @Injectable()
 export class NotificationFormattingService {
   /**
    * Formats a PolymarketActivity into an HTML-formatted Telegram message.
    * Uses Telegram's supported HTML subset (bold, italic, anchor tags).
+   * @param activity The activity to format.
+   * @param profile  Optional Polymarket profile for the user; when a name is
+   *                 present it is shown as "@name" next to the profile link.
    */
-  format(activity: PolymarketActivity): string {
+  format(
+    activity: PolymarketActivity,
+    profile?: PolymarketProfile | null,
+  ): string {
     const link =
       activity.eventLink && activity.eventLink !== 'N/A'
         ? `🔗 <a href="${activity.eventLink}">View on Polymarket</a>`
@@ -36,7 +43,8 @@ export class NotificationFormattingService {
       priceSection = `${avgPriceLine}\n   ↳ ${breakdown}`;
     }
 
-    const profileLink = `👤 <a href="https://polymarket.com/${activity.userAddress}">User profile</a>`;
+    const profileName = profile?.name ? ` @${profile.name}` : '';
+    const profileLink = `👤 <a href="https://polymarket.com/${activity.userAddress}">View profile</a>${profileName}`;
 
     return [
       `🎯 <b>${activity.eventTitle}</b>`,

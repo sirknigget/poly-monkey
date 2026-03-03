@@ -93,6 +93,11 @@ describe('NotificationFormattingService – Scenario 1: full activity formatting
       '<a href="https://polymarket.com/0xabc123">View profile</a>',
     );
   });
+
+  it('does not include @name when no profile is provided', () => {
+    const msg = service.format(FULL_ACTIVITY);
+    expect(msg).not.toContain(' @');
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -178,5 +183,38 @@ describe('NotificationFormattingService – Scenario 4: multi-price breakdown', 
     };
     const msg = service.format(activity);
     expect(msg).not.toContain('↳');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Scenario 5 — Profile: @name shown when profile has a name
+// ---------------------------------------------------------------------------
+describe('NotificationFormattingService – Scenario 5: profile name', () => {
+  let service: NotificationFormattingService;
+
+  beforeAll(async () => {
+    service = await buildService();
+  });
+
+  it('appends @name after the profile link when profile has a name', () => {
+    const msg = service.format(FULL_ACTIVITY, { name: 'alice' });
+    expect(msg).toContain(
+      '<a href="https://polymarket.com/0xabc123">View profile</a> @alice',
+    );
+  });
+
+  it('does not append @name when profile has no name', () => {
+    const msg = service.format(FULL_ACTIVITY, { pseudonym: 'anon42' });
+    expect(msg).not.toContain(' @');
+  });
+
+  it('does not append @name when profile is null', () => {
+    const msg = service.format(FULL_ACTIVITY, null);
+    expect(msg).not.toContain(' @');
+  });
+
+  it('does not append @name when profile is undefined', () => {
+    const msg = service.format(FULL_ACTIVITY, undefined);
+    expect(msg).not.toContain(' @');
   });
 });

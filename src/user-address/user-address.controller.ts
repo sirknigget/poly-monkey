@@ -7,20 +7,25 @@ import {
   HttpStatus,
   Param,
   Post,
+  Put,
   UseGuards,
 } from '@nestjs/common';
-import { UserAddressDao } from './user-address.dao';
 import { AdminAuthGuard } from '../auth/admin-auth.guard';
+import { UserAddressDao } from './user-address.dao';
+import { UserManagerService } from './user-manager.service';
 
 @Controller('user-addresses')
 @UseGuards(AdminAuthGuard)
 export class UserAddressController {
-  constructor(private readonly userAddressDao: UserAddressDao) {}
+  constructor(
+    private readonly userManagerService: UserManagerService,
+    private readonly userAddressDao: UserAddressDao,
+  ) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async add(@Body('address') address: string): Promise<void> {
-    await this.userAddressDao.add(address);
+    await this.userManagerService.add(address);
   }
 
   @Delete(':address')
@@ -31,6 +36,13 @@ export class UserAddressController {
 
   @Get()
   async list(): Promise<string[]> {
-    return this.userAddressDao.findAll();
+    const users = await this.userAddressDao.findAll();
+    return users.map((u) => u.address);
+  }
+
+  @Put('profiles/refresh')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async refreshProfiles(): Promise<void> {
+    await this.userManagerService.refreshAllProfiles();
   }
 }

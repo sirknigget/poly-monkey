@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { RawActivity } from './polymarket-api.types';
+import { PolymarketProfile, RawActivity } from './polymarket-api.types';
 
 @Injectable()
 export class PolymarketApiService {
@@ -31,5 +31,26 @@ export class PolymarketApiService {
     );
     this.logger.log(`Received ${response.data.length} raw activities`);
     return response.data;
+  }
+
+  async getProfile(userAddress: string): Promise<PolymarketProfile | null> {
+    this.logger.log(`Fetching profile for address ${userAddress}`);
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get<PolymarketProfile>(
+          'https://gamma-api.polymarket.com/public-profile',
+          { params: { address: userAddress } },
+        ),
+      );
+      return response.data;
+    } catch (error: unknown) {
+      const status = (error as { response?: { status?: number } })?.response
+        ?.status;
+      if (status === 404) {
+        this.logger.log(`No profile found for address ${userAddress}`);
+        return null;
+      }
+      throw error;
+    }
   }
 }
