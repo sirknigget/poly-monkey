@@ -11,7 +11,7 @@ import { typeOrmConfig } from '../src/database/database.config';
 import { bullConfig } from '../src/queue/queue.config';
 import { ActivityModule } from '../src/activity/activity.module';
 import { UserAddressModule } from '../src/user-address/user-address.module';
-import { UserAddressDao } from '../src/user-address/user-address.dao';
+import { UserManagerService } from '../src/user-address/user-manager.service';
 import { UserAddress } from '../src/user-address/user-address.entity';
 import { PolymarketActivity } from '../src/activity/activity.entity';
 import { AdminAuthGuard } from '../src/auth/admin-auth.guard';
@@ -83,11 +83,13 @@ describe('ActivityNotifierController (e2e)', () => {
     );
     queue = moduleFixture.get<Queue>(getQueueToken(ACTIVITY_NOTIFIER_QUEUE));
 
+    await queue.obliterate({ force: true });
     await activityRepository.clear();
     await userAddressRepository.clear();
 
-    const userAddressDao = moduleFixture.get<UserAddressDao>(UserAddressDao);
-    await userAddressDao.add(TEST_ADDRESS);
+    const userManagerService =
+      moduleFixture.get<UserManagerService>(UserManagerService);
+    await userManagerService.add(TEST_ADDRESS);
   });
 
   afterAll(async () => {

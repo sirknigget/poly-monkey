@@ -87,10 +87,10 @@ describe('NotificationFormattingService – Scenario 1: full activity formatting
     expect(msg).not.toContain('↳');
   });
 
-  it('includes a clickable user profile link with the correct href', () => {
+  it('includes a clickable user profile link with the address as fallback text', () => {
     const msg = service.format(FULL_ACTIVITY);
     expect(msg).toContain(
-      '<a href="https://polymarket.com/0xabc123">View profile</a>',
+      '<a href="https://polymarket.com/0xabc123">User 0xabc123</a>',
     );
   });
 
@@ -196,10 +196,10 @@ describe('NotificationFormattingService – Scenario 5: profile name', () => {
     service = await buildService();
   });
 
-  it('appends @name after the profile link when profile has a name', () => {
+  it('includes @name inside the profile link when profile has a name', () => {
     const msg = service.format(FULL_ACTIVITY, { name: 'alice' });
     expect(msg).toContain(
-      '<a href="https://polymarket.com/0xabc123">View profile</a> @alice',
+      '<a href="https://polymarket.com/0xabc123"> @alice</a>',
     );
   });
 

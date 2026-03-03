@@ -43,8 +43,10 @@ export class NotificationFormattingService {
       priceSection = `${avgPriceLine}\n   ↳ ${breakdown}`;
     }
 
-    const profileName = profile?.name ? ` @${profile.name}` : '';
-    const profileLink = `👤 <a href="https://polymarket.com/${activity.userAddress}">View profile</a>${profileName}`;
+    const profileName = profile?.name
+      ? ` @${profile.name}`
+      : `User ${activity.userAddress}`;
+    const profileLink = `👤 <a href="https://polymarket.com/${activity.userAddress}">${profileName}</a>`;
 
     return [
       `🎯 <b>${activity.eventTitle}</b>`,
