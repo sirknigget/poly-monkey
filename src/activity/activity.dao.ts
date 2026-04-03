@@ -14,6 +14,10 @@ export class ActivityDao {
     await this.repository.save(activity);
   }
 
+  async addAll(activities: PolymarketActivity[]): Promise<void> {
+    await this.repository.save(activities);
+  }
+
   async existsByAggregationKey(
     timestamp: Date,
     marketSlug: string,

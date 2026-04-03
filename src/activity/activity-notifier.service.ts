@@ -63,13 +63,17 @@ export class ActivityNotifierService {
       `Sending notifications for ${newActivities.length} new activities`,
     );
 
-    for (const activity of newActivities) {
-      const message = this.notificationFormattingService.format(
-        activity,
-        user.profile,
-      );
-      await this.telegramService.sendMessage(message);
-      await this.activityDao.add(activity);
+    await Promise.all(
+      newActivities.map((activity) => {
+        const message = this.notificationFormattingService.format(
+          activity,
+          user.profile,
+        );
+        return this.telegramService.sendMessage(message);
+      }),
+    );
+    if (newActivities.length > 0) {
+      await this.activityDao.addAll(newActivities);
     }
 
     this.logger.log(

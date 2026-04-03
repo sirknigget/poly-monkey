@@ -86,6 +86,22 @@ describe('ActivityDao Integration', () => {
     });
   });
 
+  describe('addAll', () => {
+    it('should persist multiple activities in a single call', async () => {
+      const activities = [
+        makeActivity({ marketSlug: 'market-a', eventTitle: 'Event A' }),
+        makeActivity({ marketSlug: 'market-b', eventTitle: 'Event B' }),
+      ];
+
+      await dao.addAll(activities);
+
+      const rows = await repository.find({ order: { marketSlug: 'ASC' } });
+      expect(rows).toHaveLength(2);
+      expect(rows[0].eventTitle).toBe('Event A');
+      expect(rows[1].eventTitle).toBe('Event B');
+    });
+  });
+
   describe('existsByAggregationKey', () => {
     it('should return true when an activity with matching key exists', async () => {
       await dao.add(

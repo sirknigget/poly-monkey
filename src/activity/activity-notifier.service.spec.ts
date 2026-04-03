@@ -64,7 +64,7 @@ describe('ActivityNotifierService', () => {
     });
     mockUserAddressDao.findAll.mockResolvedValue([makeUser()]);
     mockActivityDao.existsByAggregationKey.mockResolvedValue(false);
-    mockActivityDao.add.mockResolvedValue(undefined);
+    mockActivityDao.addAll.mockResolvedValue(undefined);
     mockActivityDao.deleteOlderThan.mockResolvedValue(undefined);
     mockTelegramService.sendMessage.mockResolvedValue(undefined);
     mockFormattingService.format.mockReturnValue('<b>Test Message</b>');
@@ -85,22 +85,18 @@ describe('ActivityNotifierService', () => {
       await service.notifyNewActivities();
 
       expect(mockTelegramService.sendMessage).toHaveBeenCalledTimes(2);
-      expect(mockTelegramService.sendMessage).toHaveBeenNthCalledWith(
-        1,
+      expect(mockTelegramService.sendMessage).toHaveBeenCalledWith(
         '<b>Event A</b>',
       );
-      expect(mockTelegramService.sendMessage).toHaveBeenNthCalledWith(
-        2,
+      expect(mockTelegramService.sendMessage).toHaveBeenCalledWith(
         '<b>Event B</b>',
       );
-      expect(mockActivityDao.add).toHaveBeenCalledTimes(2);
-      expect(mockActivityDao.add).toHaveBeenNthCalledWith(
-        1,
-        expect.objectContaining({ eventTitle: 'Event A' }),
-      );
-      expect(mockActivityDao.add).toHaveBeenNthCalledWith(
-        2,
-        expect.objectContaining({ eventTitle: 'Event B' }),
+      expect(mockActivityDao.addAll).toHaveBeenCalledTimes(1);
+      expect(mockActivityDao.addAll).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({ eventTitle: 'Event A' }),
+          expect.objectContaining({ eventTitle: 'Event B' }),
+        ]),
       );
       expect(mockActivityDao.deleteOlderThan).toHaveBeenCalledTimes(1);
     });
@@ -127,9 +123,11 @@ describe('ActivityNotifierService', () => {
       expect(mockTelegramService.sendMessage).toHaveBeenCalledWith(
         '<b>New Event</b>',
       );
-      expect(mockActivityDao.add).toHaveBeenCalledTimes(1);
-      expect(mockActivityDao.add).toHaveBeenCalledWith(
-        expect.objectContaining({ eventTitle: 'New Event' }),
+      expect(mockActivityDao.addAll).toHaveBeenCalledTimes(1);
+      expect(mockActivityDao.addAll).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({ eventTitle: 'New Event' }),
+        ]),
       );
       expect(mockActivityDao.deleteOlderThan).toHaveBeenCalledTimes(1);
     });
@@ -148,7 +146,7 @@ describe('ActivityNotifierService', () => {
       await service.notifyNewActivities();
 
       expect(mockTelegramService.sendMessage).not.toHaveBeenCalled();
-      expect(mockActivityDao.add).not.toHaveBeenCalled();
+      expect(mockActivityDao.addAll).not.toHaveBeenCalled();
       expect(mockActivityDao.deleteOlderThan).toHaveBeenCalledTimes(1);
     });
   });
@@ -162,7 +160,7 @@ describe('ActivityNotifierService', () => {
       await service.notifyNewActivities();
 
       expect(mockTelegramService.sendMessage).not.toHaveBeenCalled();
-      expect(mockActivityDao.add).not.toHaveBeenCalled();
+      expect(mockActivityDao.addAll).not.toHaveBeenCalled();
       expect(mockActivityDao.deleteOlderThan).toHaveBeenCalledTimes(1);
     });
   });
