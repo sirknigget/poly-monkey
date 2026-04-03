@@ -1,4 +1,4 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq';
+import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { ACTIVITY_NOTIFIER_QUEUE } from './activity-notifier-queue.constants';
@@ -16,5 +16,10 @@ export class ActivityNotifierProcessor extends WorkerHost {
   async process(job: Job): Promise<void> {
     this.logger.log(`Processing job ${job.id}`);
     await this.activityNotifierService.notifyNewActivities();
+  }
+
+  @OnWorkerEvent('failed')
+  onFailed(job: Job, error: Error): void {
+    this.logger.error(`Job ${job.id} failed: ${error.message}`, error.stack);
   }
 }

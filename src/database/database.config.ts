@@ -17,6 +17,10 @@ export function buildTypeOrmOptions(
     database: get('DB_DATABASE'),
     synchronize: false,
     logging: ['error', 'schema', 'migration'],
+    extra: {
+      connectionTimeoutMillis: 10000,
+      statement_timeout: 30000,
+    },
     ...(get('DB_USE_SSL') === 'true'
       ? { ssl: { rejectUnauthorized: false } }
       : {}),

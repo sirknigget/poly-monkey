@@ -15,6 +15,6 @@ export class ActivityNotifierQueueService {
 
   async enqueueNotification(): Promise<void> {
     this.logger.debug(`Enqueuing notification job`);
-    await this.queue.add(NOTIFY_JOB_NAME, {});
+    await this.queue.add(NOTIFY_JOB_NAME, {}, { jobId: NOTIFY_JOB_NAME });
   }
 }
