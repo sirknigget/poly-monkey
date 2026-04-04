@@ -102,6 +102,41 @@ describe('ActivityNotifierService', () => {
     });
   });
 
+  describe('when some notification sends fail', () => {
+    beforeEach(() => {
+      mockActivityService.fetchActivities.mockResolvedValue([
+        makeActivity({ marketSlug: 'market-a', eventTitle: 'Event A' }),
+        makeActivity({ marketSlug: 'market-b', eventTitle: 'Event B' }),
+      ]);
+      mockFormattingService.format.mockImplementation(
+        (a) => `<b>${a.eventTitle}</b>`,
+      );
+      mockTelegramService.sendMessage.mockImplementation((msg: string) =>
+        msg.includes('Event A')
+          ? Promise.reject(new Error('Telegram error'))
+          : Promise.resolve(undefined),
+      );
+    });
+
+    it('saves only the activities whose notifications succeeded', async () => {
+      await service.notifyNewActivities();
+
+      expect(mockTelegramService.sendMessage).toHaveBeenCalledTimes(2);
+      expect(mockActivityDao.addAll).toHaveBeenCalledTimes(1);
+      expect(mockActivityDao.addAll).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({ eventTitle: 'Event B' }),
+        ]),
+      );
+      expect(mockActivityDao.addAll).toHaveBeenCalledWith(
+        expect.not.arrayContaining([
+          expect.objectContaining({ eventTitle: 'Event A' }),
+        ]),
+      );
+      expect(mockActivityDao.deleteOlderThan).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('when some activities already exist in the dao', () => {
     beforeEach(() => {
       mockActivityService.fetchActivities.mockResolvedValue([
