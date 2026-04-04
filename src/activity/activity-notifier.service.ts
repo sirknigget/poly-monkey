@@ -80,7 +80,7 @@ export class ActivityNotifierService {
     }
 
     this.logger.log(
-      `Finished processing activities for address ${user.address}. ${newActivities.length} new notifications sent.`,
+      `Finished processing activities for address ${user.address}. ${newActivities.length} new notifications sent, ${sentActivities.length} activities added to db.`,
     );
 
     const activityCutoff = new Date(

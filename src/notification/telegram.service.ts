@@ -51,11 +51,26 @@ export class TelegramService {
     this.logger.log(`Sending notification to ${chatIds.length} chat(s)`);
     await Promise.all(
       chatIds.map((chatId) =>
-        axios.post(url, {
-          chat_id: chatId,
-          text,
-          parse_mode: 'HTML',
-        }),
+        axios
+          .post(url, {
+            chat_id: chatId,
+            text,
+            parse_mode: 'HTML',
+          })
+          .catch((err: unknown) => {
+            const subErrors =
+              err instanceof AggregateError
+                ? err.errors.map((e: unknown) =>
+                    e instanceof Error ? e.message : String(e),
+                  )
+                : [];
+            const detail =
+              subErrors.length > 0 ? ` [${subErrors.join(', ')}]` : '';
+            this.logger.error(
+              `Failed to send Telegram message to chat ${chatId}: ${err instanceof Error ? err.message : String(err)}${detail}`,
+            );
+            throw err;
+          }),
       ),
     );
   }
