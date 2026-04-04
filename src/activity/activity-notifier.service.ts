@@ -7,7 +7,7 @@ import { UserAddressDao } from '../user-address/user-address.dao';
 import { ActivityService } from './activity.service';
 import { ActivityDao } from './activity.dao';
 
-const ACTIVITY_RETENTION_DAYS = 60;
+const ACTIVITY_RETENTION_DAYS = 7;
 
 @Injectable()
 export class ActivityNotifierService {
