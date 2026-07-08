@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "nestjs-dev-guidelines": {
+      "source": "myatminlu/vector-skills",
+      "sourceType": "github",
+      "skillPath": "skills/nestjs-dev-guidelines/SKILL.md",
+      "computedHash": "5b405fef381fd5b0fec4cfee9ba33f1614cd397898e968a71f479f2d39701944"
+    }
+  }
+}
