@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+
+    env:
+      DB_HOST: localhost
+      DB_PORT: '5432'
+      DB_USERNAME: poly_monkey
+      DB_PASSWORD: poly_monkey
+      DB_DATABASE: poly_monkey_test
+      DB_USE_SSL: 'false'
+      DB_RETRY_ATTEMPTS: '9'
+      DB_RETRY_DELAY: '3000'
+      REDIS_HOST: localhost
+      REDIS_PORT: '6379'
+      ADMIN_KEY_HASH: ci-placeholder-not-used
+      ACTIVITY_FETCH_LIMIT: '50'
+      ACTIVITY_LOOKBACK_MS: '3600000'
+      TELEGRAM_E2E_MOCK: 'true'
+      POLYMARKET_E2E_MOCK: 'true'
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: yarn
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Start Docker services
+        run: docker compose up -d
+
+      - name: Wait for Docker services
+        run: |
+          docker compose ps
+          timeout 60s bash -c 'until docker compose exec -T postgres pg_isready -U "$DB_USERNAME" -d "$DB_DATABASE"; do sleep 2; done'
+          timeout 60s bash -c 'until docker compose exec -T redis redis-cli ping; do sleep 2; done'
+
+      - name: Run database migrations
+        run: yarn migration:run
+
+      - name: Check formatting
+        run: yarn format:check:files "src/**/*.ts" "test/**/*.ts"
+
+      - name: Check lint
+        run: yarn lint:files "src/**/*.ts" "test/**/*.ts"
+
+      - name: Check types
+        run: yarn typecheck
+
+      - name: Build
+        run: yarn build
+
+      - name: Run unit tests
+        run: yarn test
+
+      - name: Run e2e tests
+        run: yarn test:e2e
+
+      - name: Stop Docker services
+        if: always()
+        run: docker compose down -v

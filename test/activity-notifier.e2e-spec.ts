@@ -16,6 +16,17 @@ import { UserAddress } from '../src/user-address/user-address.entity';
 import { PolymarketActivity } from '../src/activity/activity.entity';
 import { AdminAuthGuard } from '../src/auth/admin-auth.guard';
 import { ACTIVITY_NOTIFIER_QUEUE } from '../src/activity/activity-notifier-queue.constants';
+import {
+  cleanTelegramMock,
+  configureMockTelegramEnv,
+  mockTelegramSendMessage,
+} from './telegram-e2e-mock';
+import {
+  cleanPolymarketMock,
+  configureMockPolymarketEnv,
+  mockPolymarketApis,
+  PolymarketMock,
+} from './polymarket-e2e-mock';
 
 const TEST_ADDRESS = '0x2005d16a84ceefa912d4e380cd32e7ff827875ea';
 
@@ -53,9 +64,13 @@ describe('ActivityNotifierController (e2e)', () => {
   let activityRepository: Repository<PolymarketActivity>;
   let userAddressRepository: Repository<UserAddress>;
   let queue: Queue;
+  let polymarketMock: PolymarketMock | undefined;
 
   beforeAll(async () => {
-    process.env.ACTIVITY_FETCH_LIMIT = '10';
+    configureMockTelegramEnv();
+    configureMockPolymarketEnv();
+    polymarketMock = mockPolymarketApis();
+    process.env.ACTIVITY_FETCH_LIMIT = polymarketMock ? '150' : '10';
     process.env.ACTIVITY_LOOKBACK_MS = String(60 * 60 * 1000); // 1 hour
 
     moduleFixture = await Test.createTestingModule({
@@ -95,12 +110,14 @@ describe('ActivityNotifierController (e2e)', () => {
   afterAll(async () => {
     await activityRepository.clear();
     await userAddressRepository.clear();
+    cleanTelegramMock();
+    cleanPolymarketMock();
     delete process.env.ACTIVITY_FETCH_LIMIT;
     delete process.env.ACTIVITY_LOOKBACK_MS;
     await app.close();
   });
 
-  it('POST /activity/notify is non-blocking and the notification pipeline runs asynchronously (live)', async () => {
+  it('POST /activity/notify is non-blocking and the notification pipeline runs asynchronously', async () => {
     const token = process.env.TELEGRAM_BOT_TOKEN;
     const chatIds = process.env.TELEGRAM_CHAT_IDS;
 
@@ -110,6 +127,7 @@ describe('ActivityNotifierController (e2e)', () => {
       );
     }
 
+    const telegramMock = mockTelegramSendMessage();
     const { failed: baselineFailedCount } = await queue.getJobCounts('failed');
 
     const response = await request(app.getHttpServer())
@@ -135,5 +153,25 @@ describe('ActivityNotifierController (e2e)', () => {
       expect(activity.totalPriceUsd).toBeGreaterThan(0);
       expect(activity.timestamp).toBeInstanceOf(Date);
     });
+
+    if (telegramMock) {
+      expect(telegramMock.getRequestCount()).toBe(
+        activities.length * telegramMock.getChatIds().length,
+      );
+    }
+
+    if (polymarketMock) {
+      expect(polymarketMock.getProfileRequestCount()).toBe(1);
+      expect(polymarketMock.getActivityRequestCount()).toBe(1);
+      expect(activities).toHaveLength(
+        polymarketMock.getRecentAggregatedActivityCount(),
+      );
+      expect(activities.length).toBeLessThan(
+        polymarketMock.getAggregatedActivityCount(),
+      );
+      expect(activities.some((activity) => activity.activityCount > 1)).toBe(
+        true,
+      );
+    }
   });
 });

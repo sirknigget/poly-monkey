@@ -4,6 +4,11 @@ import { NotificationModule } from '../src/notification/notification.module';
 import { TelegramService } from '../src/notification/telegram.service';
 import { NotificationFormattingService } from '../src/notification/notification-formatting.service';
 import { PolymarketActivity } from '../src/activity/activity.entity';
+import {
+  cleanTelegramMock,
+  configureMockTelegramEnv,
+  mockTelegramSendMessage,
+} from './telegram-e2e-mock';
 
 describe('Notification Integration (e2e)', () => {
   let moduleFixture: TestingModule;
@@ -11,6 +16,8 @@ describe('Notification Integration (e2e)', () => {
   let formattingService: NotificationFormattingService;
 
   beforeAll(async () => {
+    configureMockTelegramEnv();
+
     moduleFixture = await Test.createTestingModule({
       imports: [ConfigModule.forRoot({ isGlobal: true }), NotificationModule],
     }).compile();
@@ -22,10 +29,11 @@ describe('Notification Integration (e2e)', () => {
   });
 
   afterAll(async () => {
+    cleanTelegramMock();
     await moduleFixture.close();
   });
 
-  it('should format a mock activity and send it via Telegram (live API)', async () => {
+  it('should format a mock activity and send it via Telegram', async () => {
     const token = process.env.TELEGRAM_BOT_TOKEN;
     const chatIds = process.env.TELEGRAM_CHAT_IDS;
 
@@ -51,10 +59,17 @@ describe('Notification Integration (e2e)', () => {
       orders: [{ tokenPrice: 0.5349, numTokens: 2500, priceUsdt: 1337.42 }],
     };
 
+    const telegramMock = mockTelegramSendMessage();
     const formattedMessage = formattingService.format(mockActivity);
 
     await expect(
       telegramService.sendMessage(formattedMessage),
     ).resolves.not.toThrow();
+
+    if (telegramMock) {
+      expect(telegramMock.getRequestCount()).toBe(
+        telegramMock.getChatIds().length,
+      );
+    }
   });
 });
