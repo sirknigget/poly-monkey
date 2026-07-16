@@ -13,41 +13,41 @@ export class PolymarketActivity {
   id?: number;
 
   @Column({ type: 'text', array: true })
-  transactionHashes: string[];
+  transactionHashes!: string[];
 
   @Column({ type: 'timestamp' })
-  timestamp: Date;
+  timestamp!: Date;
 
   @Column()
-  userAddress: string;
+  userAddress!: string;
 
   @Column()
-  eventTitle: string;
+  eventTitle!: string;
 
   @Column()
-  eventLink: string;
+  eventLink!: string;
 
   @Column()
-  marketSlug: string;
+  marketSlug!: string;
 
   @Column()
-  outcomePurchased: string;
+  outcomePurchased!: string;
 
   @Column()
-  side: string;
+  side!: string;
 
   @Column({ type: 'float' })
-  totalPriceUsd: number;
+  totalPriceUsd!: number;
 
   @Column({ type: 'float' })
-  numTokens: number;
+  numTokens!: number;
 
   @Column({ type: 'float' })
-  avgPricePerToken: number;
+  avgPricePerToken!: number;
 
   @Column()
-  activityCount: number;
+  activityCount!: number;
 
   @Column({ type: 'jsonb' })
-  orders: Order[];
+  orders!: Order[];
 }

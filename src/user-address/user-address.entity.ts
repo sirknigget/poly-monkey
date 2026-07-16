@@ -4,8 +4,8 @@ import { PolymarketProfile } from '../polymarket-api/polymarket-api.types';
 @Entity({ name: 'user_address' })
 export class UserAddress {
   @PrimaryColumn()
-  address: string;
+  address!: string;
 
   @Column({ type: 'jsonb', nullable: true })
-  profile: PolymarketProfile | null;
+  profile!: PolymarketProfile | null;
 }
