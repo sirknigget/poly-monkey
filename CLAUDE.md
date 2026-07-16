@@ -6,9 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # Development
-yarn start:dev          # Hot-reload dev server (port 3000, or PORT env var)
-yarn build              # Compile to dist/
-yarn start:prod         # Run compiled output
+yarn install            # Install dependencies (Yarn 4)
+yarn start:dev          # Hot-reload NestJS dev server (port 3000, or PORT env var)
+yarn build              # Compile TypeScript to dist/
+yarn start:prod         # Run compiled output from dist/main
 
 # Testing
 yarn test               # Unit tests (src/**/*.spec.ts)
@@ -17,12 +18,12 @@ yarn test:cov           # Unit tests with coverage report
 yarn test:e2e           # E2E/integration tests (test/*.e2e-spec.ts) — runs serially
 
 # Quality
-yarn lint               # ESLint with auto-fix
-yarn format             # Prettier --write
+yarn lint               # ESLint with auto-fix over src/ and test/
+yarn format             # Prettier --write over src/ and test/
 
 # Database migrations
-yarn migration:generate MigrationName  # Pass only the name — path prefix is baked into package.json
-yarn migration:run      # Run pending migrations
+yarn migration:generate MigrationName  # Pass only the name — package.json writes to src/database/migrations/$0
+yarn migration:run      # Run pending migrations using src/database/data-source.ts
 yarn migration:revert   # Revert last migration
 yarn schema:drop        # Drop entire schema
 
@@ -31,75 +32,78 @@ docker-compose up -d    # Start PostgreSQL 16 + Redis containers
 ```
 
 To run a single unit test file:
+
 ```bash
 yarn test -- activity.service.spec.ts
 ```
 
+To run one E2E test file:
+
+```bash
+yarn test:e2e -- activity-notifier.e2e-spec.ts
+```
+
 ## Environment Setup
 
-`.env` already exists and is configured, but is not readable by Claude. Reference `.env.template` for the required variable names:
-- `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_IDS` — required for notification delivery; comma-separated IDs
-- `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_DATABASE`, `DB_USE_SSL` — required at startup (`getOrThrow` enforces this)
-- `ADMIN_KEY_HASH` — bcrypt hash used by `AdminAuthGuard`; all endpoints require `x-admin-key` header
-- `REDIS_HOST`, `REDIS_PORT` — BullMQ queue connection
-- `ACTIVITY_FETCH_LIMIT` — optional, defaults to 100; max raw activities fetched per address
-- `ACTIVITY_LOOKBACK_MS` — lookback window in milliseconds for fetching activities
+`.env` exists locally but should not be read directly. Reference `.env.template` for variable names:
 
-The E2E notification test reads `.env` directly if env vars aren't already set.
+- `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_IDS` — used by `TelegramService`; chat IDs are comma-separated.
+- `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_DATABASE`, `DB_USE_SSL` — required by TypeORM startup and migration CLI config.
+- `ADMIN_KEY_HASH` — bcrypt hash checked by `AdminAuthGuard`; protected endpoints require the `x-admin-key` header.
+- `REDIS_HOST`, `REDIS_PORT` — BullMQ/Redis connection.
+- `ACTIVITY_FETCH_LIMIT` — max raw activities fetched per monitored address.
+- `ACTIVITY_LOOKBACK_MS` — lookback window in milliseconds for activity filtering.
+
+`docker-compose.yml` starts Redis and PostgreSQL using the configured Redis/DB ports and database credentials. E2E tests use `jest.e2e.setup.js` for a 60s timeout and may hit real local infrastructure or external APIs depending on the spec.
 
 ## Architecture
 
-**Pipeline triggered by `POST /activity/notify`:**
+This is a NestJS service that monitors stored Polymarket wallet addresses, aggregates recent trade activity, sends Telegram notifications, and persists notified activity for deduplication.
 
-```
+**Notification pipeline triggered by `POST /activity/notify`:**
+
+```text
 ActivityNotifierController
         ↓
-ActivityNotifierQueueService (enqueue to BullMQ)
-        ↓ (BullMQ job)
-ActivityNotifierProcessor (consume)
+ActivityNotifierQueueService (enqueue BullMQ job)
+        ↓
+ActivityNotifierProcessor (consume job)
         ↓
 ActivityNotifierService
         ↓               ↓              ↓
 ActivityService    ActivityDao    TelegramService
         ↓
-PolymarketApiModule
-(HTTP transport)
+PolymarketApiService
 ```
 
-1. **`polymarket-api/`** — thin HTTP wrapper around `data-api.polymarket.com/activity`. Public methods: `getActivities(userAddress, limit)` returning `RawActivity[]`, and `getProfile(userAddress)` returning `PolymarketProfile | null`.
+`AppModule` wires global `ConfigModule`, TypeORM via `src/database/database.config.ts`, BullMQ via `src/queue/queue.config.ts`, plus the activity, notification, logging, and user-address modules. TypeORM runs with `synchronize: false`; migrations are the schema mechanism, and `migrationsRun: true` runs compiled migrations automatically at app startup.
 
-2. **`activity/`** — business logic across four components:
-   - `ActivityNotifierQueueService`: enqueues a job; reads `ACTIVITY_FETCH_LIMIT` from env.
-   - `ActivityNotifierProcessor` (`@Processor`): consumes jobs and delegates to `ActivityNotifierService`.
-   - `ActivityService.fetchActivities(userAddress, limit, fromTime)`: groups `RawActivity` records by composite key `[timestamp, slug, outcome, side]`, aggregates each group (sum `usdcSize` → `totalPriceUsd`, sum `size` → `numTokens`), sorts descending by timestamp.
-   - `ActivityDao`: TypeORM repository wrapper. Checks deduplication by aggregation key `[timestamp, marketSlug, outcomePurchased, side, userAddress]`, persists seen activities, prunes records older than 60 days.
-   - `ActivityNotifierService`: orchestrator. Reads addresses from `UserAddressDao`, fetches activities within the `ACTIVITY_LOOKBACK_MS` window, filters already-seen via `ActivityDao`, sends Telegram messages for new ones, then persists them.
+### Core modules
 
-3. **`notification/`** — `NotificationFormattingService` renders HTML for Telegram (includes user profile name if available); `TelegramService` broadcasts to all configured chat IDs in parallel.
-
-4. **`user-address/`** — manages which Polymarket wallet addresses to monitor, stored in DB (not env). `UserAddressController` exposes CRUD at `POST /user-addresses`, `DELETE /user-addresses/:address`, `GET /user-addresses`, and `PUT /user-addresses/profiles/refresh`. `UserManagerService.add()` fetches the Polymarket profile and stores it alongside the address.
-
-**Root module** (`app.module.ts`) wires: `ConfigModule` (global), `TypeOrmModule` (async), `BullModule` (async), `ActivityModule`, `NotificationModule`, `LoggingModule`, `UserAddressModule`.
-
-**Database** (`src/config/database.config.ts`): TypeORM async config; `synchronize: false` always — schema managed via migrations. `migrationsRun: true` means migrations run automatically at startup. Data source for CLI is `src/database/data-source.ts`.
+- `src/polymarket-api/` — HTTP wrapper around Polymarket APIs. `getActivities(userAddress, limit)` calls `https://data-api.polymarket.com/activity` for trade activity; `getProfile(userAddress)` calls the public profile API and returns `null` on 404.
+- `src/activity/` — queue entrypoint and notification orchestration.
+  - `ActivityNotifierController` exposes `POST /activity/notify`, protected by `AdminAuthGuard`.
+  - `ActivityNotifierQueueService` enqueues the BullMQ notify job.
+  - `ActivityNotifierProcessor` consumes jobs and delegates to `ActivityNotifierService`.
+  - `ActivityNotifierService` loads monitored addresses from `UserAddressDao`, reads `ACTIVITY_FETCH_LIMIT` and `ACTIVITY_LOOKBACK_MS`, fetches recent activities, filters already-seen aggregated activity via `ActivityDao`, sends Telegram messages, persists only successfully sent activities, then prunes persisted activity older than 7 days.
+  - `ActivityService.fetchActivities(userAddress, limit, fromTime)` groups raw records by `[timestamp, slug, outcome, side]`, sums `usdcSize` and `size`, calculates average price, sorts newest first, and returns normalized `PolymarketActivity` objects.
+  - `ActivityDao` wraps the TypeORM repository for deduplication, persistence, and retention cleanup.
+- `src/notification/` — `NotificationFormattingService` renders Telegram-supported HTML for an activity and optional profile; `TelegramService` broadcasts the message to all configured chat IDs in parallel and surfaces send failures.
+- `src/user-address/` — manages watched Polymarket wallet addresses stored in the database. `UserAddressController` exposes `POST /user-addresses`, `DELETE /user-addresses/:address`, `GET /user-addresses`, and `PUT /user-addresses/profiles/refresh`, all protected by `AdminAuthGuard`. `UserManagerService.add()` fetches and stores the profile alongside the address.
+- `src/auth/` — `AdminAuthGuard` compares the `x-admin-key` request header with `ADMIN_KEY_HASH` using bcrypt.
 
 ## Testing Patterns
 
-Unit tests live alongside source files (`*.spec.ts`). E2E tests are in `test/`.
+Unit tests live alongside source files as `*.spec.ts` and run with `jest.unit.config.js`. E2E specs live in `test/*.e2e-spec.ts` and run serially with `jest.e2e.config.js`.
 
-- Uses `@suites/unit` (`@suites/di.nestjs`, `@suites/doubles.jest`) for auto-mocking in unit tests — creates isolated units with all dependencies mocked.
-- For integration-style unit tests: use `overrideProvider(PolymarketApiService)` to inject a mock into a real NestJS test module.
-- The `polymarket-activity.e2e-spec.ts` test hits the **live Polymarket API** — non-deterministic, requires network access.
-- The `notification.e2e-spec.ts` test sends a **real Telegram message** — requires `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_IDS`.
+- Unit tests use `@suites/unit` / `@suites/di.nestjs` / `@suites/doubles.jest` for isolated units with mocked dependencies.
+- Integration-style Nest tests can use `overrideProvider(...)` to replace external services while exercising real module wiring.
+- `test/polymarket-activity.e2e-spec.ts` hits the live Polymarket API and is network-dependent.
+- `test/notification.e2e-spec.ts` can send a real Telegram message and requires Telegram environment variables.
+- DAO E2E tests depend on the configured PostgreSQL database.
 
-## Key Types
+## Key Domain Types
 
-`RawActivity` (`polymarket-api/polymarket-api.types.ts`) — raw API response shape with optional fields including `timestamp` (Unix seconds), `transactionHash`, `slug`, `outcome`, `side`, `usdcSize`, `size`, `price`.
-
-`PolymarketActivity` (`activity/activity.entity.ts`) — TypeORM entity and normalized output. Key fields: `transactionHashes` (text array), `timestamp`, `eventTitle`, `eventLink`, `marketSlug`, `outcomePurchased`, `side`, `totalPriceUsd`, `numTokens`, `avgPricePerToken`, `activityCount`, `orders` (jsonb).
-
-`Order` (`activity/activity.entity.ts`) — `{ tokenPrice, numTokens, priceUsdt }` — one entry per raw transaction in the aggregated activity.
-
-## Docs
-
-Architecture decisions and design documents are in `docs/` (ADRs, design docs, PRDs, task plans).
+- `RawActivity` (`src/polymarket-api/polymarket-api.types.ts`) — Polymarket raw activity response; timestamps are Unix seconds and numeric trade fields include `usdcSize`, `size`, and `price`.
+- `PolymarketActivity` (`src/activity/activity.entity.ts`) — TypeORM entity and normalized aggregated activity. Deduplication uses `[timestamp, marketSlug, outcomePurchased, side, userAddress]`.
+- `Order` (`src/activity/activity.entity.ts`) — per-raw-trade breakdown stored on `PolymarketActivity.orders` as `{ tokenPrice, numTokens, priceUsdt }`.
