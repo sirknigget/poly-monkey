@@ -36,7 +36,7 @@ async function waitForQueueToDrain(
     if (counts.failed > baselineFailedCount) {
       const [failedJob] = await queue.getFailed(0, 0);
       throw new Error(
-        `Job failed: ${failedJob?.failedReason}\n${failedJob?.stacktrace}`,
+        `Job failed: ${failedJob?.failedReason}\n${failedJob?.stacktrace.join('\n')}`,
       );
     }
     if (counts.waiting === 0 && counts.active === 0 && counts.delayed === 0) {

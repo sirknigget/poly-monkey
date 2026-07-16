@@ -3,7 +3,6 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { typeOrmConfig } from '../src/database/database.config';
-import { UserAddressModule } from '../src/user-address/user-address.module';
 import { UserAddressDao } from '../src/user-address/user-address.dao';
 import { UserAddress } from '../src/user-address/user-address.entity';
 
@@ -17,8 +16,9 @@ describe('UserAddressDao Integration', () => {
       imports: [
         ConfigModule.forRoot({ isGlobal: true }),
         TypeOrmModule.forRootAsync(typeOrmConfig),
-        UserAddressModule,
+        TypeOrmModule.forFeature([UserAddress]),
       ],
+      providers: [UserAddressDao],
     }).compile();
 
     dao = moduleFixture.get<UserAddressDao>(UserAddressDao);
@@ -28,7 +28,7 @@ describe('UserAddressDao Integration', () => {
   });
 
   afterAll(async () => {
-    await moduleFixture.close();
+    await moduleFixture?.close();
   });
 
   beforeEach(async () => {

@@ -1,10 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { typeOrmConfig } from '../src/database/database.config';
 import { ActivityService } from '../src/activity/activity.service';
-import { ActivityModule } from '../src/activity/activity.module';
+import { PolymarketApiModule } from '../src/polymarket-api/polymarket-api.module';
 
 const TEST_ADDRESS = '0x2005d16a84ceefa912d4e380cd32e7ff827875ea';
 
@@ -15,11 +12,8 @@ describe('PolymarketActivityService (integration)', () => {
 
   beforeAll(async () => {
     module = await Test.createTestingModule({
-      imports: [
-        ConfigModule.forRoot({ isGlobal: true }),
-        TypeOrmModule.forRootAsync(typeOrmConfig),
-        ActivityModule,
-      ],
+      imports: [PolymarketApiModule],
+      providers: [ActivityService, Logger],
     }).compile();
 
     const app = module.createNestApplication();
@@ -33,7 +27,7 @@ describe('PolymarketActivityService (integration)', () => {
   });
 
   afterAll(async () => {
-    await module.close();
+    await module?.close();
   });
 
   it('returns a non-empty array for the known test address', () => {

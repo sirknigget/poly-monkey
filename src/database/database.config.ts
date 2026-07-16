@@ -29,12 +29,14 @@ export function buildTypeOrmOptions(
 
 export const typeOrmConfig: TypeOrmModuleAsyncOptions = {
   inject: [ConfigService],
-  useFactory: (configService: ConfigService) => ({
+  useFactory: (configService: ConfigService): TypeOrmModuleOptions => ({
     ...buildTypeOrmOptions((key) =>
       configService.get<string>(key, configService.getOrThrow<string>(key)),
     ),
     autoLoadEntities: true,
     migrations: ['dist/database/migrations/*.js'],
     migrationsRun: true,
+    retryAttempts: Number(configService.get<string>('DB_RETRY_ATTEMPTS', '9')),
+    retryDelay: Number(configService.get<string>('DB_RETRY_DELAY', '3000')),
   }),
 };

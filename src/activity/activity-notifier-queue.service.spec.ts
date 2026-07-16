@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { getQueueToken } from '@nestjs/bullmq';
 import { ActivityNotifierQueueService } from './activity-notifier-queue.service';
@@ -17,6 +18,10 @@ describe('ActivityNotifierQueueService', () => {
         {
           provide: getQueueToken(ACTIVITY_NOTIFIER_QUEUE),
           useValue: mockQueue,
+        },
+        {
+          provide: Logger,
+          useValue: { debug: jest.fn() },
         },
       ],
     }).compile();

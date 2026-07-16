@@ -3,7 +3,6 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { typeOrmConfig } from '../src/database/database.config';
-import { ActivityModule } from '../src/activity/activity.module';
 import { ActivityDao } from '../src/activity/activity.dao';
 import { PolymarketActivity } from '../src/activity/activity.entity';
 
@@ -38,8 +37,9 @@ describe('ActivityDao Integration', () => {
       imports: [
         ConfigModule.forRoot({ isGlobal: true }),
         TypeOrmModule.forRootAsync(typeOrmConfig),
-        ActivityModule,
+        TypeOrmModule.forFeature([PolymarketActivity]),
       ],
+      providers: [ActivityDao],
     }).compile();
 
     dao = moduleFixture.get<ActivityDao>(ActivityDao);
@@ -49,7 +49,7 @@ describe('ActivityDao Integration', () => {
   });
 
   afterAll(async () => {
-    await moduleFixture.close();
+    await moduleFixture?.close();
   });
 
   beforeEach(async () => {
